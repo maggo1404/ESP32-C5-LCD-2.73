@@ -110,9 +110,8 @@ static void worker_task(void *arg)
             }
             xQueueSend(s_free_q, &it.slot, 0);
         }
-        uint16_t ch = s_pending_channel;
+        uint16_t ch = __atomic_exchange_n(&s_pending_channel, 0, __ATOMIC_ACQ_REL);
         if (ch) {
-            s_pending_channel = 0;
             ESP_LOGI(TAG, "Kanal %u MHz", ch);
             phy_change_channel(ch, 1, 0, 0);
             /* drop frames queued from the previous channel */
@@ -132,7 +131,7 @@ static void worker_task(void *arg)
 void rx_set_channel(uint16_t channel_mhz)
 {
     /* executed by the worker task (not by the caller, e.g. the LVGL task) */
-    s_pending_channel = channel_mhz;
+    __atomic_store_n(&s_pending_channel, channel_mhz, __ATOMIC_RELEASE);
 }
 
 void rx_reset_stats(void)
