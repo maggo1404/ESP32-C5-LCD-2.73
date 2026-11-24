@@ -1,0 +1,75 @@
+name: Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  firmware:
+    name: Firmware
+    uses: ./.github/workflows/firmware.yml
+
+  deploy:
+    name: Web-Flasher veroeffentlichen
+    needs: firmware
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: firmware
+          path: out
+
+      - name: Seite zusammenstellen
+        run: |
+          set -eu
+          mkdir -p _site/firmware _site/gehaeuse
+          cp -r web/. _site/
+          cp out/firmware-factory.bin _site/firmware/
+          for f in enclosure/export/*.3mf enclosure/export/*.step enclosure/export/*.stl; do
+            [ -e "$f" ] && cp "$f" _site/gehaeuse/ || true
+          done
+          VERSION="$(git describe --tags --always --dirty 2>/dev/null || git rev-parse --short HEAD)"
+          python3 - "$VERSION" <<'PY'
+          import json, sys
+          manifest = {
+              "name": "ITS-G5 Empfänger (ESP32-C5-LCD-2.73)",
+              "version": sys.argv[1],
+              "new_install_prompt_erase": True,
+              "builds": [
+                  {
+                      "chipFamily": "ESP32-C5",
+                      "parts": [{"path": "firmware/firmware-factory.bin", "offset": 0}],
+                  }
+              ],
+          }
+          with open("_site/manifest.json", "w", encoding="utf-8") as fh:
+              json.dump(manifest, fh, ensure_ascii=False, indent=2)
+          PY
+          (cd _site/gehaeuse && python3 -c "import json,os; print(json.dumps(sorted(f for f in os.listdir('.') if f.endswith(('.3mf','.step','.stl')))))" > files.json)
+          touch _site/.nojekyll
+          find _site -type f | sort
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4

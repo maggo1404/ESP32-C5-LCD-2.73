@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ITS-G5 Empfänger – Web-Flasher</title>
+<meta name="description" content="Firmware für den ESP32-C5-LCD-2.73 direkt im Browser flashen: ITS-G5-Empfänger für C-ITS-Nachrichten.">
+<link rel="stylesheet" href="style.css">
+<script type="module" src="https://unpkg.com/esp-web-tools@10.5.2/dist/web/install-button.js?module"></script>
+</head>
+<body>
+<main>
+<h1>ITS-G5 Empfänger – Web-Flasher</h1>
+<p class="lead">Firmware für den <strong>ESP32-C5-LCD-2.73</strong> direkt aus dem Browser installieren.</p>
+
+<section>
+<h2>Was ist das?</h2>
+<p>Der ESP32-C5-LCD-2.73 empfängt ITS-G5 (IEEE 802.11p, 5,9&nbsp;GHz) und dekodiert
+C-ITS-Nachrichten: <strong>CAM</strong>, <strong>DENM</strong>, <strong>MAPEM</strong> und
+<strong>SPATEM</strong>. Das 320×320-Display zeigt Status, Stationen, Warnungen und – bei
+Ampelkreuzungen – den Signalzustand jeder Fahrspur. Optional gibt es eine USB-Rohdatenausgabe und
+ein pcap-Log auf der SD-Karte.</p>
+</section>
+
+<section>
+<h2>Voraussetzungen</h2>
+<ul>
+<li>Desktop-Browser mit Web Serial: <strong>Chrome</strong> oder <strong>Edge</strong> (Firefox und Safari werden nicht unterstützt).</li>
+<li>USB-C-Datenkabel (nicht nur Ladekabel).</li>
+<li>Die Seite muss über HTTPS aufgerufen werden (GitHub Pages erfüllt das).</li>
+</ul>
+<div id="no-serial" class="warn" hidden>Dieser Browser unterstützt Web Serial nicht. Bitte Chrome oder Edge am Desktop verwenden oder die Firmware manuell mit esptool flashen (siehe unten).</div>
+</section>
+
+<section>
+<h2>Installation</h2>
+<ol>
+<li>Gerät per USB-C mit dem Computer verbinden.</li>
+<li>Falls später kein Port erkannt wird: <kbd>BOOT</kbd> gedrückt halten, das USB-Kabel (erneut) einstecken, dann loslassen.</li>
+<li>Auf <em>Firmware installieren</em> klicken und den Port des Geräts (USB-JTAG/Serial) auswählen.</li>
+<li>Löschen des Flash bestätigen (empfohlen) und warten, bis die Installation abgeschlossen ist. Das Gerät startet danach neu.</li>
+</ol>
+<div class="install">
+<esp-web-install-button manifest="manifest.json">
+  <button slot="activate" class="fallback" type="button">Firmware installieren</button>
+  <span slot="unsupported">Web Serial wird von diesem Browser nicht unterstützt.</span>
+  <span slot="not-allowed">Die Installation ist nur über HTTPS oder localhost möglich.</span>
+</esp-web-install-button>
+</div>
+<p id="version" style="text-align:center;color:var(--muted);margin:0" hidden></p>
+</section>
+
+<section>
+<h2>Fehlerbehebung</h2>
+<details><summary>Der Port wird nicht angezeigt</summary>
+<p>Anderes USB-Kabel oder anderen Port probieren. <kbd>BOOT</kbd> halten, während das Kabel eingesteckt wird, um den Download-Modus zu erzwingen. Unter Linux ggf. Mitglied der Gruppe <code>dialout</code> werden.</p></details>
+<details><summary>Verbindung bricht ab oder Installation schlägt fehl</summary>
+<p>Andere Programme schließen, die den Port nutzen (Serial-Monitor, Terminal). Geräte-Reset durchführen und erneut starten, ggf. mit gedrückter <kbd>BOOT</kbd>-Taste.</p></details>
+<details><summary>Das Display bleibt dunkel</summary>
+<p>Nach der Installation einmal USB trennen und wieder verbinden. Prüfen, ob die Installation vollständig durchlief.</p></details>
+<details><summary>Manuell flashen</summary>
+<p><code>esptool.py --chip esp32c5 write_flash 0x0 firmware-factory.bin</code> – das Image gibt es auch bei den <a href="https://github.com/maggo1404/ESP32-C5-LCD-2.73/releases">Releases</a>.</p></details>
+</section>
+
+<section>
+<h2>Gehäuse</h2>
+<p>3D-druckbares Handgerät-Gehäuse mit Akkufach und Lüftungsgitter-Clip (PETG oder ASA empfohlen, besonders fürs Auto):</p>
+<ul id="enclosure"><li>Dateien werden geladen …</li></ul>
+</section>
+
+<footer>
+<a href="https://github.com/maggo1404/ESP32-C5-LCD-2.73">Quellcode auf GitHub</a> · GPL-3.0-or-later
+</footer>
+</main>
+<script>
+(function(){
+  if(!('serial' in navigator)) document.getElementById('no-serial').hidden=false;
+  fetch('manifest.json').then(function(r){return r.json()}).then(function(m){
+    var v=document.getElementById('version'); v.textContent='Firmware-Version: '+m.version; v.hidden=false;
+  }).catch(function(){});
+  var ul=document.getElementById('enclosure');
+  fetch('gehaeuse/files.json').then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(files){
+    if(!files.length)throw 0;
+    ul.textContent='';
+    files.forEach(function(f){
+      var li=document.createElement('li'),a=document.createElement('a');
+      a.href='gehaeuse/'+encodeURIComponent(f); a.textContent=f; li.appendChild(a); ul.appendChild(li);
+    });
+  }).catch(function(){
+    ul.innerHTML='<li>Noch keine Gehäuse-Dateien veröffentlicht. Siehe <a href="https://github.com/maggo1404/ESP32-C5-LCD-2.73/tree/main/enclosure">enclosure/</a> im Repository.</li>';
+  });
+})();
+</script>
+</body>
+</html>
