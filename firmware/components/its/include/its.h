@@ -105,10 +105,10 @@ typedef struct {
     bool     termination;
 } its_denm_t;
 
-#define ITS_MAX_LANES        48
+#define ITS_MAX_LANES        64
 #define ITS_MAX_LANE_NODES   8
 #define ITS_MAX_CONNECTIONS  4
-#define ITS_MAX_SIGNAL_STATES 32
+#define ITS_MAX_SIGNAL_STATES 48
 #define ITS_NAME_LEN         32
 
 /* lane direction flags (LaneDirection bitstring) */
@@ -162,6 +162,7 @@ typedef struct {
     char     name[ITS_NAME_LEN];
     int32_t  ref_lat, ref_lon;  /* 1e-7 deg */
     uint8_t  n_lanes;
+    uint8_t  lanes_dropped;     /* lanes beyond ITS_MAX_LANES that were not stored (saturating) */
     its_lane_t lanes[ITS_MAX_LANES];
 } its_map_intersection_t;
 
@@ -195,6 +196,7 @@ typedef struct {
     bool     has_timestamp;
     uint16_t timestamp_ms;       /* DSecond, ms within minute */
     uint8_t  n_states;
+    uint8_t  states_dropped;    /* movement states beyond ITS_MAX_SIGNAL_STATES not stored (saturating) */
     its_signal_state_t states[ITS_MAX_SIGNAL_STATES];
 } its_spat_intersection_t;
 

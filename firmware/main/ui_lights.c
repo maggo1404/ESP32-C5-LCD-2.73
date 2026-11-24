@@ -473,15 +473,19 @@ void ui_lights_update(const its_store_intersection_t *is, int64_t now_us)
         lv_obj_clear_flag(s_msg, LV_OBJ_FLAG_HIDDEN);
         return;
     }
-    char b[96], a1[16], a2[16];
+    char b[128], a1[16], a2[16];
     if (is->has_map) fmt_age(a1, sizeof(a1), now_us - is->map_rx_us); else strcpy(a1, "--");
     if (is->has_spat) fmt_age(a2, sizeof(a2), now_us - is->spat_rx_us); else strcpy(a2, "--");
     const char *name = is->name[0] ? is->name : NULL;
     char nm[48];
     if (name) snprintf(nm, sizeof(nm), "%s", name);
     else snprintf(nm, sizeof(nm), "Kreuzung %u/%u", (unsigned)is->region, (unsigned)is->id);
-    snprintf(b, sizeof(b), "%s\nMAP %s  SPAT %s  %s%s", nm, a1, a2, s_map_view ? "Ansicht: Karte" : "Spuren",
-             (!s_map_view && s_n_items > vis) ? "  (<> scrollen)" : "");
+    char dropped[32] = "";
+    if (is->has_map && is->map.lanes_dropped > 0) {
+        snprintf(dropped, sizeof(dropped), " +%u fehlen", (unsigned)is->map.lanes_dropped);
+    }
+    snprintf(b, sizeof(b), "%s\nMAP %s  SPAT %s  %s%s%s", nm, a1, a2, s_map_view ? "Ansicht: Karte" : "Spuren",
+             (!s_map_view && s_n_items > vis) ? "  (<> scrollen)" : "", dropped);
     lv_label_set_text(s_info, b);
 
     if (!is->has_map) {

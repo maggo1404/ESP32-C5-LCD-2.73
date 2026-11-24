@@ -23,6 +23,17 @@ Die Dekodierlogik für MAP/SPAT und die GN-Header lehnt sich an
 [cits-to-go](https://github.com/OpenTrafficMap/cits-to-go) (Kotlin, GPL-3.0) an, prüft aber gegen das ASN.1 und
 überspringt Erweiterungen statt sie abzulehnen.
 
+## Einschränkungen
+
+- Countdowns (`its_timemark_remaining_tenths`) brauchen im SPATEM `moy` **und** `timeStamp`; fehlt `moy` (oder ist es
+  527040 = ungültig), gibt es keine Uhr und der Countdown ist unbekannt (-1).
+- Das alte Secured-Format nach ETSI TS 103 097 v1.2.1 wird nicht unterstützt (nur IEEE 1609.2 / TS 103 097 ≥ v1.3.1);
+  solche Frames liefern `ITS_ERR_SECURITY`.
+- Mehr als `ITS_MAX_LANES` (64) Spuren bzw. `ITS_MAX_SIGNAL_STATES` (48) Signalgruppen werden nicht gespeichert; die
+  Anzahl steht in `lanes_dropped` / `states_dropped`.
+- SPAT-Daten gelten nach 30 s ohne Update als veraltet (`has_spat = false`), MAP-Geometrie bleibt bis 120 s.
+- DENM-Ablauf pauschal nach 10 min (validityDuration wird nicht ausgewertet).
+
 ## Tests (Host)
 
 ```sh

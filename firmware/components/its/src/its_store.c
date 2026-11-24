@@ -23,6 +23,7 @@
 
 #define STATION_TIMEOUT_US       (60LL * 1000000LL)
 #define INTERSECTION_TIMEOUT_US  (120LL * 1000000LL)
+#define SPAT_TIMEOUT_US          (30LL * 1000000LL)
 #define DENM_TIMEOUT_US          (600LL * 1000000LL)
 
 static its_store_t s_store;
@@ -157,7 +158,9 @@ static void ingest_map(const its_packet_t *pkt, int8_t rssi, int64_t now_us)
         is->has_map = true;
         is->map_rx_us = now_us;
         memcpy(&is->map, m, sizeof(*m));
-        memcpy(is->name, m->name, sizeof(is->name));
+        if (m->name[0] != '\0') {
+            memcpy(is->name, m->name, sizeof(is->name));
+        }
         is->station_id = pkt->station_id;
         is->rssi = rssi;
     }
@@ -183,7 +186,7 @@ static void ingest_spat(const its_packet_t *pkt, int8_t rssi, int64_t now_us)
             is->station_id = pkt->station_id;
         }
         is->rssi = rssi;
-        if (sp->has_moy && sp->has_timestamp && sp->timestamp_ms < 61000u) {
+        if (sp->has_moy && sp->moy < 527040u && sp->has_timestamp && sp->timestamp_ms < 61000u) {
             is->has_clock = true;
             is->spat_hour_tenths = (sp->moy % 60u) * 600u + sp->timestamp_ms / 100u;
             is->spat_clock_us = now_us;
@@ -319,6 +322,12 @@ void its_store_tick(int64_t now_us)
     }
     for (int i = 0; i < ITS_STORE_MAX_INTERSECTIONS; i++) {
         its_store_intersection_t *is = &s_store.intersections[i];
+        if (is->used && is->has_spat && now_us - is->spat_rx_us > SPAT_TIMEOUT_US) {
+            /* stale signal states must not be shown; MAP geometry stays */
+            is->has_spat = false;
+            is->has_clock = false;
+            memset(&is->spat, 0, sizeof(is->spat));
+        }
         if (is->used && now_us - intersection_last_rx(is) > INTERSECTION_TIMEOUT_US) {
             memset(is, 0, sizeof(*is));
         }

@@ -247,7 +247,7 @@ def emit_map(varname, inters):
     for g in inters:
         rp = g["refPoint"]
         ref_lat, ref_lon = rp["lat"], rp["long"]
-        lanes = [exp_lane(l, ref_lat, ref_lon) for l in g["laneSet"]][:48]
+        lanes = [exp_lane(l, ref_lat, ref_lon) for l in g["laneSet"]][:64]
         out.append("  {")
         out.append("    .region = %d, .id = %d, .revision = %d, .name = %s," % (
             g["id"].get("region", 0), g["id"]["id"], g["revision"], cstr(g.get("name", ""))))
@@ -274,7 +274,7 @@ def emit_spat(varname, states):
     out = ["static const its_spat_intersection_t %s[] = {" % varname]
     for s in states:
         sts = []
-        for ms in s["states"][:32]:
+        for ms in s["states"][:48]:
             ev = ms["state-time-speed"][0]
             t = ev.get("timing")
             U = 36001
@@ -290,7 +290,7 @@ def emit_spat(varname, states):
         out.append("  { .region = %d, .id = %d, .revision = %d, .name = %s, .has_moy = %d, .moy = %d, "
                    ".has_timestamp = %d, .timestamp_ms = %d, .n_states = %d,\n    .states = {\n      %s\n    } }," % (
                        s["id"].get("region", 0), s["id"]["id"], s["revision"], cstr(s.get("name", "")),
-                       int("moy" in s), s.get("moy", 0), int("timeStamp" in s), s.get("timeStamp", 0),
+                       int(s.get("moy", 527040) < 527040), (s.get("moy", 0) if s.get("moy", 527040) < 527040 else 0), int("timeStamp" in s), s.get("timeStamp", 0),
                        len(sts), ",\n      ".join(sts)))
     out.append("};")
     return "\n".join(out) + "\n"
@@ -702,8 +702,8 @@ finish_msg("mapem_with_trailing_containers", DSRC, "MAPEM",
 
 # Many lanes / nodes / connections: truncation to the store limits
 many_lanes = []
-for i in range(1, 56):
-    nn = 3 + (i % 20)
+for i in range(1, 71):
+    nn = 2 + (i % 10)
     many_lanes.append(mk_lane(i, [xy("node-XY2", 10 + i, 20 + (k % 5)) for k in range(nn)],
                               direction="10" if i % 2 else "01", ingress=(i % 15) + 1 if i % 2 else None,
                               mnv="1" + "0" * 11,
@@ -767,9 +767,14 @@ finish_msg("spatem_future_extensions", DSRCF, "SPATEM",
 
 # SPAT with > 32 movement states
 sp_many = inter_state(12, 1, [mstate(i % 255 + 1, [mevent("protected-Movement-Allowed", minEndTime=i * 10)])
-                              for i in range(40)], moy=61, ts=5000)
+                              for i in range(60)], moy=61, ts=5000)
 finish_msg("spatem_many_states", DSRC, "SPATEM", spat_msg(0x66666665, [sp_many]), 2004, kind="SPAT", ht=4,
            exp=emit_spat("exp_spatem_many_states", [sp_many]), n_exp=1)
+
+# invalid MinuteOfTheYear (527040): no clock may be derived
+sp_badmoy = inter_state(13, 1, [mstate(1, [mevent("protected-Movement-Allowed", minEndTime=50)])], moy=527040, ts=100)
+finish_msg("spatem_invalid_moy", DSRC, "SPATEM", spat_msg(0x66666666, [sp_badmoy]), 2004, kind="SPAT",
+           exp=emit_spat("exp_spatem_invalid_moy", [sp_badmoy]), n_exp=1)
 
 # ---- Frame level extras ----------------------------------------------------
 # GN beacon (no payload): HT 1

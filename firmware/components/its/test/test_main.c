@@ -308,6 +308,12 @@ static void test_vectors(void)
             for (int k = 0; k < n && k < v->n_map; k++) {
                 cmp_map(v->name, &out[k], &v->map[k], k);
             }
+            if (strcmp(v->name, "mapem_many_lanes") == 0) {
+                CHECK_EQ(out[0].n_lanes, ITS_MAX_LANES);
+                CHECK_EQ(out[0].lanes_dropped, 70 - ITS_MAX_LANES);
+            } else {
+                for (int k = 0; k < n; k++) { CHECK_EQ(out[k].lanes_dropped, 0); }
+            }
             /* output limit */
             int n1 = its_decode_mapem(&p, out, 1);
             CHECK_EQ(n1, 1);
@@ -325,6 +331,13 @@ static void test_vectors(void)
             CHECK_EQ(n, v->n_spat);
             for (int k = 0; k < n && k < v->n_spat; k++) {
                 cmp_spat(v->name, &out[k], &v->spat[k], k);
+            }
+            if (strcmp(v->name, "spatem_many_states") == 0) {
+                CHECK_EQ(out[0].n_states, ITS_MAX_SIGNAL_STATES);
+                CHECK_EQ(out[0].states_dropped, 60 - ITS_MAX_SIGNAL_STATES);
+            }
+            if (strcmp(v->name, "spatem_invalid_moy") == 0) {
+                CHECK(!out[0].has_moy);
             }
             int n1 = its_decode_spatem(&p, out, 1);
             CHECK_EQ(n1, 1);
@@ -571,6 +584,16 @@ static void test_store(void)
     const its_store_intersection_t *c = find_is(8, 99);
     CHECK(c == NULL);
 
+    /* invalid moy must not create a clock */
+    ingest_vec("spatem_invalid_moy", -50, T0 + 8500);
+    {
+        const its_store_intersection_t *bm = find_is(13, 1);
+        CHECK(bm && bm->has_spat && !bm->has_clock);
+        CHECK_EQ(its_timemark_remaining_tenths(bm, 50, T0 + 8500), -1);
+    }
+    /* MAP without name must not erase an existing name */
+    CHECK(strcmp(find_is(7, 12)->name, "Kreuzung Mitte") == 0);
+
     /* DENM table and termination */
     CHECK_EQ(count_denms(), 1);
     ingest_vec("denm_v1_accident", -50, T0 + 9000);
@@ -596,7 +619,8 @@ static void test_store(void)
     /* expiry: stations 60 s, intersections 120 s, DENM 10 min */
     its_store_tick(T0 + 61LL * 1000000LL + 9300);
     CHECK_EQ(count_stations(), 0);
-    CHECK_EQ(count_is(), 2);
+    CHECK_EQ(count_is(), 3);
+    CHECK(!find_is(7, 12)->has_spat && find_is(7, 12)->has_map);   /* SPAT stale after 30 s */
     its_store_tick(T0 + 5000 + 121LL * 1000000LL);
     CHECK_EQ(count_is(), 0);
     CHECK_EQ(count_denms(), 1);
@@ -702,7 +726,7 @@ static void test_store_intersection_replacement(void)
     CHECK(find_is(12, 1) != NULL);
     CHECK(find_is(10, 1) == NULL);                    /* oldest ones evicted */
     const its_store_intersection_t *m = find_is(9, 1000);
-    CHECK(m && m->map.n_lanes == ITS_MAX_LANES);
+    CHECK(m && m->map.n_lanes == ITS_MAX_LANES && m->map.lanes_dropped == 6);
     its_store_clear();
 }
 
@@ -713,6 +737,10 @@ static void test_names(void)
     CHECK(strcmp(its_msg_name(ITS_MSG_SPATEM), "SPATEM") == 0);
     CHECK(strcmp(its_msg_name(ITS_MSG_MAPEM), "MAPEM") == 0);
     CHECK(strcmp(its_msg_name(ITS_MSG_DENM), "DENM") == 0);
+    CHECK(strcmp(its_msg_name(ITS_MSG_PCIM), "MIM") == 0);
+    CHECK(strcmp(its_msg_name(ITS_MSG_PCVM), "MVM") == 0);
+    CHECK(strcmp(its_msg_name(ITS_MSG_PAM), "PIM") == 0);
+    CHECK(strcmp(its_msg_name(ITS_MSG_EV_RSR), "rfu") == 0);
     CHECK(strcmp(its_msg_name(200), "Unbekannt") == 0);
     CHECK(strcmp(its_station_type_name(0), "Unbekannt") == 0);
     CHECK(strcmp(its_station_type_name(1), "Fußgänger") == 0);

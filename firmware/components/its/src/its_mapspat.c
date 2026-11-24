@@ -354,6 +354,8 @@ static void read_geometry(uper_t *u, its_map_intersection_t *m)
         read_lane(u, &ctx, store ? &m->lanes[m->n_lanes] : &tmp);
         if (store && !u->err) {
             m->n_lanes++;
+        } else if (!store && !u->err && m->lanes_dropped < UINT8_MAX) {
+            m->lanes_dropped++;
         }
     }
     if (has_pp) {
@@ -501,8 +503,11 @@ static void read_intersection_state(uper_t *u, its_spat_intersection_t *s)
     s->revision = (uint8_t)uper_get(u, 7);
     uper_skip(u, 16);                          /* status */
     if (has_moy) {
-        s->moy = (uint32_t)uper_constrained(u, 0, 527040);
-        s->has_moy = !u->err;
+        uint32_t moy = (uint32_t)uper_constrained(u, 0, 527040);
+        if (!u->err && moy < 527040u) {     /* 527040 = invalid / unavailable */
+            s->moy = moy;
+            s->has_moy = true;
+        }
     }
     if (has_ts) {
         s->timestamp_ms = (uint16_t)uper_get(u, 16);
@@ -532,6 +537,8 @@ static void read_intersection_state(uper_t *u, its_spat_intersection_t *s)
         if (mext) { uper_skip_ext_additions(u); }
         if (!u->err && s->n_states < ITS_MAX_SIGNAL_STATES) {
             s->states[s->n_states++] = tmp;
+        } else if (!u->err && s->states_dropped < UINT8_MAX) {
+            s->states_dropped++;
         }
     }
     if (has_ma) { skip_maneuver_assist_list(u); }

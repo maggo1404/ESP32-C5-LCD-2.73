@@ -11,8 +11,8 @@ const char *its_msg_name(uint8_t id)
     case ITS_MSG_SPATEM:  return "SPATEM";
     case ITS_MSG_MAPEM:   return "MAPEM";
     case ITS_MSG_IVIM:    return "IVIM";
-    case ITS_MSG_EV_RSR:  return "EV-RSR";
-    case ITS_MSG_TISTPGM: return "TISTPGM";
+    case ITS_MSG_EV_RSR:
+    case ITS_MSG_TISTPGM: return "rfu";
     case ITS_MSG_SREM:    return "SREM";
     case ITS_MSG_SSEM:    return "SSEM";
     case ITS_MSG_EVCSN:   return "EVCSN";
@@ -22,10 +22,10 @@ const char *its_msg_name(uint8_t id)
     case ITS_MSG_IMZM:    return "IMZM";
     case ITS_MSG_VAM:     return "VAM";
     case ITS_MSG_DSM:     return "DSM";
-    case ITS_MSG_PCIM:    return "PCIM";
-    case ITS_MSG_PCVM:    return "PCVM";
+    case ITS_MSG_PCIM:    return "MIM";
+    case ITS_MSG_PCVM:    return "MVM";
     case ITS_MSG_MCM:     return "MCM";
-    case ITS_MSG_PAM:     return "PAM";
+    case ITS_MSG_PAM:     return "PIM";
     default:              return "Unbekannt";
     }
 }
