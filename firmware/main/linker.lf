@@ -1,0 +1,7 @@
+# Move the .bss of the decoder component (state store ~70 KB, decode scratch
+# ~22 KB) into PSRAM. Needs CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY.
+[mapping:its_store_psram]
+archive: libits.a
+entries:
+    if ESP_ALLOW_BSS_SEG_EXTERNAL_MEMORY = y:
+        its_store (extram_bss)
