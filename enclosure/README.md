@@ -37,7 +37,7 @@ vorne gesehen **oben rechts** (Käfigmitte bx 18,7 → X = +15,3), der BAT-Steck
 - Fenster 50,5 x 50,5 mm mit 1 mm 45°-Fase außen (aktive Fläche 48,96), Offset `WIN_OFF_X/Y` (Standard 0 = mittig; aus der
   Zeichnung ca. mittig gemessen)
 - Akkufach 52 x 36 x 6,0 mm (unten, **bewusst nicht über der Antenne**), Schiebedeckel 1,6 mm in Führungsnut
-- Rückseite über der PCB-Antenne (X -24…-9,5, Y 20,5…34) ausgespart: dort nur 1,5 mm Boden, keine Rippen, kein Metall.
+- Rückseite über der PCB-Antenne (X -24…-4, Y 25,5…34) ausgespart: dort nur 1,5 mm Boden, keine Rippen, kein Metall.
   Abschalten mit `ANT_RECESS = False`.
 
 ## Befestigung

@@ -10,7 +10,7 @@ GitHub Pages.
 
 | Thema | Entscheidung |
 |---|---|
-| Framework | ESP-IDF **v5.5.x** + **LVGL 8.4** (wie die Waveshare-Beispiele, LVGL 9 ist mit deren Treiber inkompatibel) |
+| Framework | ESP-IDF **v5.5.6** + **LVGL 8.4** (wie die Waveshare-Beispiele, LVGL 9 ist mit deren Treiber inkompatibel) |
 | Extras | USB-Raw-Ausgabe (SLIP, kompatibel zu sl2mqtt3) und SD-Karten-Log (pcap, LINKTYPE 105) |
 | Gehäuse | Handgerät mit herausnehmbarem LiPo **503450 (1000 mAh, ca. 50×34×5 mm)** und integriertem **Lüftungsgitter-Clip** |
 | Branch | `main` (Default, Pages-Deploy) und `claude/admiring-bohr-ybe4c1` |
