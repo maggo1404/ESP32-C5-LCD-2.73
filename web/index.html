@@ -25,25 +25,25 @@ ein pcap-Log auf der SD-Karte.</p>
 <section>
 <h2>Voraussetzungen</h2>
 <ul>
-<li>Desktop-Browser mit Web Serial: <strong>Chrome</strong> oder <strong>Edge</strong> (Firefox und Safari werden nicht unterstützt).</li>
+<li>Browser mit Web Serial bzw. WebUSB: <strong>Chrome</strong> oder <strong>Edge</strong> (am Desktop; Chrome für Android per WebUSB möglich). Firefox und Safari werden nicht unterstützt.</li>
 <li>USB-C-Datenkabel (nicht nur Ladekabel).</li>
 <li>Die Seite muss über HTTPS aufgerufen werden (GitHub Pages erfüllt das).</li>
 </ul>
-<div id="no-serial" class="warn" hidden>Dieser Browser unterstützt Web Serial nicht. Bitte Chrome oder Edge am Desktop verwenden oder die Firmware manuell mit esptool flashen (siehe unten).</div>
+<div id="no-serial" class="warn" hidden>Dieser Browser unterstützt weder Web Serial noch WebUSB. Bitte Chrome oder Edge am Desktop verwenden oder die Firmware manuell mit esptool flashen (siehe unten).</div>
 </section>
 
 <section>
 <h2>Installation</h2>
 <ol>
 <li>Gerät per USB-C mit dem Computer verbinden.</li>
-<li>Falls später kein Port erkannt wird: <kbd>BOOT</kbd> gedrückt halten, das USB-Kabel (erneut) einstecken, dann loslassen.</li>
+<li>Wenn im Auswahlfenster kein Port erscheint: <kbd>BOOT</kbd> gedrückt halten, das USB-Kabel aus- und wieder einstecken und <kbd>BOOT</kbd> erst danach loslassen (Download-Modus).</li>
 <li>Auf <em>Firmware installieren</em> klicken und den Port des Geräts (USB-JTAG/Serial) auswählen.</li>
-<li>Löschen des Flash bestätigen (empfohlen) und warten, bis die Installation abgeschlossen ist. Das Gerät startet danach neu.</li>
+<li>Optional <em>Erase device</em> ankreuzen: empfohlen bei der Erstinstallation, nicht bei Updates, da dabei auch die gespeicherten Einstellungen (NVS) gelöscht werden. Warten, bis die Installation abgeschlossen ist; das Gerät startet danach neu.</li>
 </ol>
 <div class="install">
 <esp-web-install-button manifest="manifest.json">
   <button slot="activate" class="fallback" type="button">Firmware installieren</button>
-  <span slot="unsupported">Web Serial wird von diesem Browser nicht unterstützt.</span>
+  <span slot="unsupported">Dieser Browser wird nicht unterstützt.</span>
   <span slot="not-allowed">Die Installation ist nur über HTTPS oder localhost möglich.</span>
 </esp-web-install-button>
 </div>
@@ -74,7 +74,7 @@ ein pcap-Log auf der SD-Karte.</p>
 </main>
 <script>
 (function(){
-  if(!('serial' in navigator)) document.getElementById('no-serial').hidden=false;
+  if(!('serial' in navigator)&&!('usb' in navigator)){document.getElementById('no-serial').hidden=false;var ib=document.querySelector('esp-web-install-button');if(ib)ib.hidden=true;}
   fetch('manifest.json').then(function(r){return r.json()}).then(function(m){
     var v=document.getElementById('version'); v.textContent='Firmware-Version: '+m.version; v.hidden=false;
   }).catch(function(){});

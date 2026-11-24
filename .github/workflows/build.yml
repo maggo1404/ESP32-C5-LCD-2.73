@@ -2,7 +2,7 @@ name: Build
 
 on:
   push:
-    branches: ["**"]
+    branches-ignore: [main]
     tags: ["v*"]
   pull_request:
 
@@ -39,10 +39,23 @@ jobs:
         with:
           name: firmware
           path: out
-      - uses: softprops/action-gh-release@v2
+      - name: Release mit Firmware
+        uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: out/firmware-factory.bin
+      - name: Gehaeuse-Dateien auswaehlen
+        run: |
+          set -eu
+          mkdir -p enclosure-release
+          for f in enclosure/export/*.step enclosure/export/*.stl enclosure/export/*.3mf; do
+            case "$(basename "$f")" in board_dummy.*) continue;; esac
+            [ -e "$f" ] && cp "$f" enclosure-release/ || true
+          done
+      - name: Gehaeuse-Dateien anhaengen
+        uses: softprops/action-gh-release@v2
+        with:
           fail_on_unmatched_files: false
           files: |
-            out/firmware-factory.bin
-            enclosure/export/*
+            enclosure-release/*

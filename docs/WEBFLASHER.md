@@ -5,7 +5,7 @@
 | Workflow | Auslöser | Aufgabe |
 |---|---|---|
 | `.github/workflows/build.yml` | Push (alle Branches), Pull Request, Tags `v*` | Decoder-Hosttests, Firmware-Build, bei Tags GitHub-Release |
-| `.github/workflows/firmware.yml` | wiederverwendbar (`workflow_call`) | baut die Firmware in `espressif/idf` (ESP-IDF v5.5.1, Ziel `esp32c5`) und erzeugt `firmware-factory.bin` |
+| `.github/workflows/firmware.yml` | wiederverwendbar (`workflow_call`) | baut die Firmware in `espressif/idf` (ESP-IDF v5.5.6, Ziel `esp32c5`) und erzeugt `firmware-factory.bin` |
 | `.github/workflows/pages.yml` | Push auf `main`, manuell | baut die Firmware, erzeugt die Seite samt Manifest und deployt sie auf GitHub Pages |
 
 Das Factory-Image entsteht mit `python -m esptool --chip esp32c5 merge_bin ... @flash_args` im Build-Ordner.
@@ -20,7 +20,7 @@ Das Image enthält Bootloader (Offset 0x2000), Partitionstabelle und Anwendung u
 4. Die Seite erscheint unter `https://maggo1404.github.io/ESP32-C5-LCD-2.73/`.
 
 Der Flasher nutzt **ESP Web Tools 10.5.2** (enthält esptool-js 0.7.x mit ESP32-C5-Unterstützung) und braucht
-Chrome oder Edge am Desktop (Web Serial, HTTPS).
+Chrome oder Edge (Web Serial bzw. WebUSB, HTTPS).
 
 ## Releases
 

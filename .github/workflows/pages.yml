@@ -17,11 +17,21 @@ jobs:
     name: Firmware
     uses: ./.github/workflows/firmware.yml
 
+  decoder-tests:
+    name: Decoder-Hosttests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cmake -S firmware/components/its/test -B build-test
+      - run: cmake --build build-test
+      - run: ctest --test-dir build-test --output-on-failure
+
   deploy:
     name: Web-Flasher veroeffentlichen
-    needs: firmware
+    needs: [firmware, decoder-tests]
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       pages: write
       id-token: write
     environment:
@@ -63,7 +73,8 @@ jobs:
           with open("_site/manifest.json", "w", encoding="utf-8") as fh:
               json.dump(manifest, fh, ensure_ascii=False, indent=2)
           PY
-          (cd _site/gehaeuse && python3 -c "import json,os; print(json.dumps(sorted(f for f in os.listdir('.') if f.endswith(('.3mf','.step','.stl')))))" > files.json)
+          rm -f _site/gehaeuse/board_dummy.*
+          (cd _site/gehaeuse && python3 -c "import json,os; print(json.dumps(sorted(f for f in os.listdir('.') if f.endswith(('.3mf','.step','.stl')) and not f.startswith('assembly'))))" > files.json)
           touch _site/.nojekyll
           find _site -type f | sort
 
