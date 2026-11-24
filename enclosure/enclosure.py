@@ -35,7 +35,7 @@ WALL = 2.0
 CLR = 0.3               # Spiel je Seite fuer Passungen (Platine in Gehaeuse)
 DT_CLR = 0.2            # Spiel Schwalbenschwanz / Schiebedeckel
 COMP_GAP = 0.3          # Luft zwischen Bauteilen und Boden
-LCD_FRONT_GAP = 0.0     # Rahmen liegt direkt auf dem Glas (klemmt). Dickenspiel ggf. mit 0.2 mm Schaumstoff-/Klebeband ausgleichen
+LCD_FRONT_GAP = 0.5     # Luft Glas <-> Rahmen-Unterseite: fuer 0.8-1.0 mm selbstklebendes Schaumstoff-Dichtband (auf 0.5 komprimiert)
 # --- Frontrahmen ---
 BEZEL_T = 1.8           # Plattendicke (Senkung 1.0 tief laesst 0.8 unter dem Kopf)
 WIN = 50.5              # Fensterbreite/-hoehe (aktiv 48.96 + Spiel)
@@ -315,7 +315,7 @@ def make_clip():
            (xs + n - k + tip, tip), (xs - n + c, tip)]
     ridge = prism_y(pts, -CLIP_RIDGE_L / 2, CLIP_RIDGE_L / 2)
     ridge = ridge.faces(">Z").edges("|Y").fillet(0.6)          # Spitze verrunden
-    ridge = ridge.union(cq.Workplane("XY").sphere(0.55).translate((xs, DETENT_Y, tip)))   # Rastnase
+    ridge = ridge.union(cq.Workplane("XY").sphere(0.7).translate((xs, DETENT_Y, tip)))   # Rastnase
     plate = box(-CLIP_PLATE_X / 2, CLIP_PLATE_X / 2, -CLIP_PLATE_Y / 2, CLIP_PLATE_Y / 2,
                 z_pl_top - CLIP_PLATE_T, z_pl_top + 0.01)
     z0 = z_pl_top - CLIP_PLATE_T

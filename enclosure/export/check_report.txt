@@ -1,13 +1,13 @@
 == Parameter/Stack ==
-Aussenmass Koerper/Rahmen: 78.0 x 78.0 mm, Gesamtdicke ohne Clip: 21.80 mm
-Z: Fach 0..8.60, Boden bis 10.10, Platine 14.40..16.00, LCD bis 20.00, Koerper-Oberkante 20.00, Rahmen bis 21.80
+Aussenmass Koerper/Rahmen: 78.0 x 78.0 mm, Gesamtdicke ohne Clip: 22.30 mm
+Z: Fach 0..8.60, Boden bis 10.10, Platine 14.40..16.00, LCD bis 20.00, Koerper-Oberkante 20.50, Rahmen bis 22.30
 Schraube: M2 Senkkopf in den Ecken, Rahmen 1.8 + Bohrung 8.0 -> M2x8 (selbstschneidend)
 Schrauben-Mitte +-35.8, Abstand Bohrungsrand zur Platinentasche: 2.59 mm
 == Gueltigkeit ==
-body          valid=True solids=1 vol=  45202.1 mm3 bbox=(78.0 x 78.0 x 20.0)
+body          valid=True solids=1 vol=  45888.9 mm3 bbox=(78.0 x 78.0 x 20.5)
 front_bezel   valid=True solids=1 vol=   6127.2 mm3 bbox=(78.0 x 78.0 x 1.8)
 battery_door  valid=True solids=1 vol=   2924.3 mm3 bbox=(56.6 x 39.7 x 1.4)
-vent_clip     valid=True solids=1 vol=   2536.5 mm3 bbox=(12.0 x 28.0 x 21.2)
+vent_clip     valid=True solids=1 vol=   2536.8 mm3 bbox=(12.0 x 28.0 x 21.4)
 board_dummy   valid=True solids=1 vol=  43769.8 mm3 bbox=(68.0 x 68.8 x 9.6)
 == Durchdringung (Baugruppe) ==
 body          x front_bezel      0.000 mm3 OK
@@ -21,10 +21,10 @@ battery_door  x vent_clip        0.000 mm3 OK
 battery_door  x board_dummy      0.000 mm3 OK
 vent_clip     x board_dummy      0.000 mm3 OK
 == Druckplatte ==
-body          x    6.0..  84.0 y    6.0..  84.0 z 0..20.0
+body          x    6.0..  84.0 y    6.0..  84.0 z 0..20.5
 front_bezel   x   91.0.. 169.0 y    6.0..  84.0 z 0..1.8
 battery_door  x   16.7..  73.3 y  100.1.. 139.8 z 0..1.4
-vent_clip     x  119.4.. 140.6 y  106.0.. 134.0 z 0..12.0
+vent_clip     x  119.3.. 140.7 y  106.0.. 134.0 z 0..12.0
 == Funktions-Probes ==
 Nut Querformat frei von linker Aussenkante bis Anschlag                OK
 Nut Querformat endet am Anschlag (Wand dahinter)                       OK

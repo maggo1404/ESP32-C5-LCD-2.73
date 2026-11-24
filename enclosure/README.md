@@ -31,9 +31,9 @@ vorne gesehen **oben rechts** (Käfigmitte bx 18,7 → X = +15,3), der BAT-Steck
 
 ## Maße (Standardparameter)
 
-- Außenmaß Körper/Rahmen **78,0 x 78,0 mm** (Platinentasche 68,6), Gesamtdicke **21,8 mm** (ohne Clip; Clip +18,2 mm nach hinten)
+- Außenmaß Körper/Rahmen **78,0 x 78,0 mm** (Platinentasche 68,6), Gesamtdicke **22,3 mm** (ohne Clip; Clip +18,2 mm nach hinten)
 - Stapel von hinten: Lippe 1,0 + Deckelnut 1,6 + Akku 6,0 (=8,6), Trennboden 1,5, Bauteilraum 4,3 (Bauteile 4,0 + 0,3 Luft),
-  Platine 1,6, LCD 4,0, Frontrahmen 1,8
+  Platine 1,6, LCD 4,0, 0,5 Luft (Dichtband), Frontrahmen 1,8
 - Fenster 50,5 x 50,5 mm mit 1 mm 45°-Fase außen (aktive Fläche 48,96), Offset `WIN_OFF_X/Y` (Standard 0 = mittig; aus der
   Zeichnung ca. mittig gemessen)
 - Akkufach 52 x 36 x 6,0 mm (unten, **bewusst nicht über der Antenne**), Schiebedeckel 1,6 mm in Führungsnut
@@ -46,9 +46,10 @@ Das LCD-Glas ist durchgehend, die M2-Löcher gibt es nur in der Platine dahinter
 
 1. **Platine** liegt von hinten auf 4 Standoffs (Ø5) und wird durch 4 kurze **Zapfen** (Ø2,0, Höhe = Platinendicke − 0,2 mm)
    in den Platinenlöchern zentriert; die Zapfen erreichen die LCD-Rückseite nie.
-2. Der **Frontrahmen** liegt direkt auf dem Glas (`LCD_FRONT_GAP` = 0; bei mittigem Fenster überdeckt er das Glas ca. 8,75 mm
-   breit) und klemmt Display+Platine auf die Standoffs. Sind die Dicken in Wirklichkeit kleiner, 0,2 mm Schaumstoff-/Klebeband
-   auf die Glaskante legen; sind sie größer, `LCD_T`/`PCB_T` anpassen (Rahmen schließt sonst nicht).
+2. Der **Frontrahmen** liegt über einem **selbstklebenden Schaumstoff-Dichtband** (0,8–1,0 mm dick, ca. 2–3 mm breit, rundum auf die
+   Glaskante geklebt; im Rahmen auf 0,5 mm komprimiert, `LCD_FRONT_GAP` = 0,5) und klemmt so Display+Platine nachgiebig auf die
+   Standoffs. Dadurch gleicht das Band Dickenabweichungen (±0,2 mm) aus und belastet das Glas nicht starr über die Schrauben.
+   Rahmen überdeckt das Glas bei mittigem Fenster ca. 8,75 mm breit.
 3. Rahmen und Körper werden mit **4x M2-Senkkopfschrauben in den Ecken außerhalb der 68x68-Platine** verschraubt
    (Schraubenmitte ±35,8 mm, ≥2,5 mm Wand zur Platinentasche). Daher wuchs das Außenmaß auf 78 mm.
    Länge: Rahmen 1,8 + Bohrung 8,0 − 0,5 = 9,3 → **M2 x 8** (selbstschneidend in Ø1,8-Bohrung, PETG/ASA).
@@ -92,7 +93,7 @@ Das LCD-Glas ist durchgehend, die M2-Löcher gibt es nur in der Platine dahinter
 Separates Teil, per **einseitigem Schwalbenschwanz** (45°, druckbar ohne Stützen) auf die Rückseite geschoben.
 Zwei Nuten kreuzen sich im Clip-Mittelpunkt (`CLIP_CX/CLIP_CY` = +6 / 16, rechts neben der Antenne, über dem Akkufach frei):
 von oben einschieben = Hochformat, von der **linken Seite** = Querformat (die Nut läuft bis zur Außenkante); am Anschlag sitzt der Clip mittig.
-Eine **Rastnase** (Ø1,1) am Clip rastet in einer Mulde der Nut und hält ihn auch gegen das Gerätegewicht (Hochformat) in Position.
+Eine **Rastnase** (Ø1,4) am Clip rastet in einer Mulde der Nut und hält ihn auch gegen das Gerätegewicht (Hochformat) in Position.
 Zwei federnde Zinken (15 mm Tiefe) klemmen eine Lamelle; Ruhespalt = `SLAT_T` − 0,4 mm, Standard Lamelle 2,0 mm
 (Bereich 1,5–3 mm, `SLAT_T` anpassen). Zähne an den Spitzen verhaken die Lamellenkante.
 Druck: Clip auf der Seite liegend, Platte und Zinken haben dieselbe Auflagefläche, Ridge-Spitze verrundet; 100 % Infill.
@@ -107,10 +108,12 @@ Druck: Clip auf der Seite liegend, Platte und Zinken haben dieselbe Auflagefläc
 
 ## Zusammenbau
 
+Benötigt außerdem: 4x M2x8 Senkkopfschrauben und ca. 250 mm Schaumstoff-Dichtband (0,8–1,0 mm, selbstklebend).
+
 1. Opfer-Stege im Akkufach ausbrechen. Akkukabel von hinten durch den Bodenschlitz (8 x 19 mm) fädeln (Polarität prüfen!) und
    den JST-Stecker **vor dem Einsetzen der Platine** am BAT-Stecker einstecken (er ist nur so gut erreichbar).
 2. Platine+LCD von vorn in den Körper legen (USB-C unten, TF oben; Zapfen in die Platinenlöcher, sie liegt auf den 4 Standoffs).
-3. Frontrahmen aufsetzen, 4x M2x8 Senkschrauben eindrehen (nicht überdrehen).
+3. Dichtband rundum auf die Glaskante kleben, Frontrahmen aufsetzen, 4x M2x8 Senkschrauben eindrehen (nicht überdrehen).
 4. Akku einlegen, Deckel von unten unter die Rücklippe schieben bis er einrastet.
 5. Clip bei Bedarf einschieben (hoch/quer).
 
