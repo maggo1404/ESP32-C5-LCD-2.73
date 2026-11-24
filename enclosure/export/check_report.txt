@@ -1,13 +1,13 @@
 == Parameter/Stack ==
-Aussenmass Koerper/Rahmen: 78.0 x 78.0 mm, Gesamtdicke ohne Clip: 21.20 mm
-Z: Fach 0..7.80, Boden bis 9.30, Platine 13.70..15.30, LCD bis 19.30, Koerper-Oberkante 19.60, Rahmen bis 21.20
-Schraube: M2 Senkkopf in den Ecken, Rahmen 1.6 + Bohrung 8.0 -> M2x8 (selbstschneidend)
+Aussenmass Koerper/Rahmen: 78.0 x 78.0 mm, Gesamtdicke ohne Clip: 21.80 mm
+Z: Fach 0..8.60, Boden bis 10.10, Platine 14.40..16.00, LCD bis 20.00, Koerper-Oberkante 20.00, Rahmen bis 21.80
+Schraube: M2 Senkkopf in den Ecken, Rahmen 1.8 + Bohrung 8.0 -> M2x8 (selbstschneidend)
 Schrauben-Mitte +-35.8, Abstand Bohrungsrand zur Platinentasche: 2.59 mm
 == Gueltigkeit ==
-body          valid=True solids=1 vol=  42418.1 mm3 bbox=(78.0 x 78.0 x 19.6)
-front_bezel   valid=True solids=1 vol=   5427.0 mm3 bbox=(78.0 x 78.0 x 1.6)
-battery_door  valid=True solids=1 vol=   3148.0 mm3 bbox=(54.6 x 38.7 x 1.6)
-vent_clip     valid=True solids=1 vol=   2647.4 mm3 bbox=(14.0 x 28.0 x 20.7)
+body          valid=True solids=1 vol=  45202.1 mm3 bbox=(78.0 x 78.0 x 20.0)
+front_bezel   valid=True solids=1 vol=   6127.2 mm3 bbox=(78.0 x 78.0 x 1.8)
+battery_door  valid=True solids=1 vol=   2924.3 mm3 bbox=(56.6 x 39.7 x 1.4)
+vent_clip     valid=True solids=1 vol=   2536.5 mm3 bbox=(12.0 x 28.0 x 21.2)
 board_dummy   valid=True solids=1 vol=  43769.8 mm3 bbox=(68.0 x 68.8 x 9.6)
 == Durchdringung (Baugruppe) ==
 body          x front_bezel      0.000 mm3 OK
@@ -21,8 +21,36 @@ battery_door  x vent_clip        0.000 mm3 OK
 battery_door  x board_dummy      0.000 mm3 OK
 vent_clip     x board_dummy      0.000 mm3 OK
 == Druckplatte ==
-body          x    6.0..  84.0 y    6.0..  84.0 z 0..19.6
-front_bezel   x   91.0.. 169.0 y    6.0..  84.0 z 0..1.6
-battery_door  x   17.7..  72.3 y  100.6.. 139.3 z 0..1.6
-vent_clip     x  119.7.. 140.3 y  106.0.. 134.0 z 0..14.0
+body          x    6.0..  84.0 y    6.0..  84.0 z 0..20.0
+front_bezel   x   91.0.. 169.0 y    6.0..  84.0 z 0..1.8
+battery_door  x   16.7..  73.3 y  100.1.. 139.8 z 0..1.4
+vent_clip     x  119.4.. 140.6 y  106.0.. 134.0 z 0..12.0
+== Funktions-Probes ==
+Nut Querformat frei von linker Aussenkante bis Anschlag                OK
+Nut Querformat endet am Anschlag (Wand dahinter)                       OK
+Nut Hochformat frei von oberer Aussenkante bis Anschlag                OK
+Deckel liegt hinter der Lippe (zmin >= RAIL_T)                         OK
+Deckel ueberlappt Lippe >= 1.5 mm je Seite                             OK
+Lippe (Koerper) unter dem Deckel bei x=-27, z=0.5                      OK
+Deckel sitzt in Nut bei x=-27                                          OK
+Lippe (Koerper) unter dem Deckel bei x=+27, z=0.5                      OK
+Deckel sitzt in Nut bei x=+27                                          OK
+Akkufach nach hinten offen (Oeffnung frei)                             OK
+TF-Fenster frei bei X=8.8                                              OK
+TF-Fenster frei bei X=15.3                                             OK
+TF-Fenster frei bei X=21.8                                             OK
+TF-Fingermulde aussen frei                                             OK
+TF-Fenster ca. 15.3 mm, Wand daneben geschlossen                       OK
+Rastmulde im Koerper vorhanden                                         OK
+Rastnase am Clip vorhanden                                             OK
+Maximale freie Spannweite Akkufach: 17 mm <= 20                        OK
+Maximale freie Spannweite Hohlraum y=30: 20 mm <= 20                   OK
+Maximale freie Spannweite Hohlraum y=-8 (rechts): 3 mm <= 20           OK
+Maximale freie Spannweite Hohlraum x=-33: 12 mm <= 20                  OK
+Antennenzone rueckseitig frei (nur Boden)                              OK
+Clip-Mitte ausserhalb der Antennenzone                                 OK
 RESULT: ALLE PRUEFUNGEN OK
+3MF body: geschlossen=True
+3MF front_bezel: geschlossen=True
+3MF battery_door: geschlossen=True
+3MF vent_clip: geschlossen=True

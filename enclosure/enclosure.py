@@ -34,24 +34,24 @@ USB_OVERHANG = 0.8      # bitte nachmessen: Buchse steht ueber Platinenkante
 WALL = 2.0
 CLR = 0.3               # Spiel je Seite fuer Passungen (Platine in Gehaeuse)
 DT_CLR = 0.2            # Spiel Schwalbenschwanz / Schiebedeckel
-COMP_GAP = 0.4          # Luft zwischen Bauteilen und Boden
-LCD_FRONT_GAP = 0.3     # komprimierbare Luft Glas <-> Rahmen-Unterseite (ggf. Schaumstoffband/Klebeband einlegen)
+COMP_GAP = 0.3          # Luft zwischen Bauteilen und Boden
+LCD_FRONT_GAP = 0.0     # Rahmen liegt direkt auf dem Glas (klemmt). Dickenspiel ggf. mit 0.2 mm Schaumstoff-/Klebeband ausgleichen
 # --- Frontrahmen ---
-BEZEL_T = 1.6           # Plattendicke
+BEZEL_T = 1.8           # Plattendicke (Senkung 1.0 tief laesst 0.8 unter dem Kopf)
 WIN = 50.5              # Fensterbreite/-hoehe (aktiv 48.96 + Spiel)
 WIN_OFF_X = 0.0         # bitte nachmessen: Fenstermitte relativ Platinenmitte (+X = rechts, vorne)
 WIN_OFF_Y = 0.0         #                   (+Y = oben)
 WIN_CHAMFER = 1.0       # 45 Grad aussen
 # --- Befestigung ---
 # Platine wird von hinten durch kurze Zapfen (in den Platinenloechern) zentriert, liegt auf 4 Standoffs und wird
-# vom Frontrahmen (Rand auf dem Glas, LCD_FRONT_GAP) geklemmt. Das LCD-Glas hat KEINE Loecher.
+# vom Frontrahmen (Rand auf dem Glas) geklemmt. Das LCD-Glas hat KEINE Loecher.
 # Rahmen <-> Koerper: 4x M2 in den Ecken AUSSERHALB der 68x68-Platine.
 OUTER = 78.0            # Aussenmass (Koerper und Rahmen)
 R_OUT = 4.0             # Aussen-Eckenradius
 SCREW_C = 35.8          # Schraubenmitte (+-X, +-Y)
 USE_INSERTS = False     # True: M2-Gewindeeinsaetze (Bohrung 3.2 x 5), False: M2 selbstschneidend in 1.8
 STANDOFF_OD = 5.0
-PIN_D = 2.0             # Zapfen (Loch 2.2)
+PIN_D = 2.0             # Zapfen (Loch 2.2), 0.3 Einfuehrfase
 PIN_H = PCB_T - 0.2     # Zapfen hoechstens Platinendicke -> beruehrt LCD-Rueckseite nie
 PILOT_D = 1.8
 PILOT_DEPTH = 8.0
@@ -63,44 +63,46 @@ SCREW_STD = [5, 6, 8, 10, 12, 14, 16, 20]
 REAR_RIM = 3.0          # umlaufender Rand
 REAR_BAND = 9.0         # halbe Breite der vollen Baender um Schwalbenschwanz-Kreuz
 REAR_BLOCK = 3.0        # Wand um Akkufach
-REAR_RIB_X = 22.0       # Zusatzrippe (rechts, nicht ueber der Antenne)
+REAR_RIB_PITCH = 15.0   # Rippenraster in den Hohlraeumen (keine Spannweite > ~15-20 mm)
 RIB_T = 2.0
 # --- Akku ---
 BAT_L, BAT_W, BAT_T = 52.0, 36.0, 6.0   # Fach (Akku 503450 ca. 50x34x5, bitte nachmessen)
-DOOR_T = 1.6
-DOOR_LIP = 1.0          # Auflage des Deckels unter der Fachkante
-BAT_CABLE_X, BAT_CABLE_Y = 34 - 57, 34 - 53   # BAT-JST in Modellkoordinaten (-23,-19)
-CABLE_SLOT = (8.0, 9.0) # Breite X, Hoehe Y des Kabeldurchlasses im Boden
+RAIL_T = 1.0            # hintere Lippe (haelt den Deckel nach aussen, Oeffnung = Akkufach)
+DOOR_T = 1.4
+DOOR_LIP = 2.0          # Ueberlappung Deckel <-> hintere Lippe je Seite
+BAT_CABLE_X, BAT_CABLE_Y = -22.6, -17.0   # BAT-JST (gemessen X -22.6, Y -21.8; Stecker zieht nach +Y)
+CABLE_SLOT = (8.0, 19.0) # Breite X, Hoehe Y des Kabeldurchlasses im Boden (Y -26.5..-7.5)
+BAT_STRUTS = True       # Opfer-Stege im Akkufach (nur im Druckteil) tragen die Fachdecke
 FLOOR_T = 1.5           # Trennboden Bauteilraum / Akkufach
 # --- Anschluesse (Rueckansicht -> Modell umgerechnet) ---
-USB_X = 0.0             # bitte nachmessen (Zeichnung: ca. -1)
-USB_PLUG_W, USB_PLUG_H = 12.0, 7.0      # Stecker-Overmold
-TF_X = 34 - 15.0        # TF-Slot Mitte Rueckansicht bx~15 -> X=+19
-TF_W = 12.0
-BTN_Y = [34 - 52.7, 34 - 61.0]  # Taster (beide Seiten) Y = -18.7, -27.0
-BTN_TAB_L = 8.0         # Laenge Biegezunge
+USB_X = -0.7            # bitte nachmessen
+USB_PLUG_W, USB_PLUG_H = 14.0, 8.0      # Stecker-Overmold
+TF_X = 15.3             # TF-Kaefig Mitte (Rueckansicht bx 18.7 -> X = 34 - 18.7)
+TF_W = 14.0
+BTN_Y = [34 - 52.7, 34 - 59.5]  # Taster (beide Seiten) Y = -18.7, -25.5
+BTN_TAB_L = 10.0         # Laenge Biegezunge
 BTN_TAB_H = 4.4         # Hoehe Zunge (Z)
 BTN_TAB_T = 1.2         # Dicke Zunge (X)
 BTN_SLIT = 0.6
-BTN_NUB = 0.05          # Abstand Stoessel-Spitze zur Platinenkante (Zunge wird beim Druck gebogen)
+BTN_NUB = 0.25          # Abstand Stoessel-Spitze zur Platinenkante (Zunge wird beim Druck gebogen)
 BTN_Z_OFF = -0.8        # Tastermitte relativ Platinenrueckseite (bitte nachmessen)
 # --- Antenne (Ruecksicht bx 38..58, by 0..28 -> X -24..-4, Y 34..6) ---
 ANT_RECESS = True       # Rueckseite ueber der Antenne ausgespart (dort nur Boden FLOOR_T)
-ANT_X = (-24.0, -9.5)
-ANT_Y = (20.5, 34.0)
+ANT_X = (-24.0, -4.0)
+ANT_Y = (25.5, 34.0)
 # --- Klemm-Clip / Schwalbenschwanz ---
-CLIP_CX, CLIP_CY = 0.0, 18.0    # Mittelpunkt des Clips auf der Rueckseite (freie Flaeche ueber Akkufach)
+CLIP_CX, CLIP_CY = 6.0, 16.0    # Mittelpunkt des Clips auf der Rueckseite (freie Flaeche ueber Akkufach)
 DT_NECK = 9.0           # Nutbreite an der Oberflaeche
 DT_DEPTH = 2.8          # Nuttiefe (45 Grad Flanke, einseitig = druckbar ohne Stuetzen)
-DT_XSHIFT = -1.0
+DT_XSHIFT = -1.7   # Nut-Hinterkante = Clip-Plattenkante (Druckflaeche)
 CLIP_RIDGE_L = 26.0
 CLIP_PLATE_Y = 28.0
-CLIP_PLATE_X = 14.0
+CLIP_PLATE_X = 12.0
 CLIP_PLATE_T = 3.0
 SLAT_T = 2.0            # Lamellendicke Luftauslass (1.5 .. 3), bitte nachmessen
 HOOK_DEPTH = 15.0
 PRONG_T = 2.4
-PRONG_W = 11.0
+PRONG_W = CLIP_PLATE_X   # gleiche Breite -> gemeinsame Druckflaeche
 PRONG_PRELOAD = 0.4     # Ruhespalt = SLAT_T - PRONG_PRELOAD
 # --- Druckbett ---
 BED = 220.0
@@ -111,7 +113,8 @@ OUT = os.path.join(HERE, "export")
 # ======================= abgeleitete Masse =======================
 INNER = BOARD + 2 * CLR
 R_IN = BOARD_R + CLR
-CAV_H = DOOR_T + DT_CLR + BAT_T            # Akkufach Hoehe (Z 0..CAV_H)
+DOOR_GROOVE_H = DOOR_T + DT_CLR
+CAV_H = RAIL_T + DOOR_GROOVE_H + BAT_T      # Akkufach Hoehe (Z 0..CAV_H)
 Z_FLOOR_TOP = CAV_H + FLOOR_T
 Z_PCB_BACK = Z_FLOOR_TOP + COMP_T + COMP_GAP
 Z_PCB_TOP = Z_PCB_BACK + PCB_T
@@ -130,7 +133,9 @@ RECESS_HALF = DOOR_W / 2 + DT_CLR
 RECESS_Y1 = POCKET_Y1 + DOOR_LIP
 DOOR_Y0 = -OUTER / 2
 DOOR_Y1 = RECESS_Y1 - 0.3
-RECESS_H = DOOR_T + DT_CLR
+DOOR_Z0 = RAIL_T                            # Deckel liegt hinter der Lippe
+DETENT_Y = -CLIP_RIDGE_L / 2 + 4.0
+DT_TIP = DT_DEPTH - 0.3
 Z_USB = Z_PCB_BACK - USB_H / 2
 Z_BTN = Z_PCB_BACK + BTN_Z_OFF
 
@@ -153,18 +158,23 @@ def prism_x(pts, x0, x1):
     """Polygon in (Y,Z) entlang +X extrudiert."""
     return cq.Workplane("YZ", origin=(x0, 0, 0)).polyline(pts).close().extrude(x1 - x0)
 
-def dt_groove_cutter(y_stop):
+def dt_groove_cutter(y_stop, y_end):
     """Nut-Schneidwerkzeug fuer Portrait (laeuft entlang Y), offen zur Oberkante.
     Einseitiger Schwalbenschwanz: Flanke -X senkrecht, Flanke +X 45 Grad hinterschnitten."""
     xs, n, d = DT_XSHIFT, DT_NECK / 2, DT_DEPTH
     pts = [(xs - n, -0.5), (xs + n - 0.5, -0.5), (xs + n + d, d), (xs - n, d)]
-    return prism_y(pts, y_stop, OUTER / 2 + 1)
+    return prism_y(pts, y_stop, y_end)
 
 def groove_cutters():
+    """Nut Portrait (offen nach oben) + Nut Querformat (um 90 Grad gedreht, offen nach -X), je mit Rastmulde."""
     y_stop = CLIP_CY - CLIP_RIDGE_L / 2 - 0.3
-    g = dt_groove_cutter(y_stop)
-    g2 = g.rotate((CLIP_CX, CLIP_CY, 0), (CLIP_CX, CLIP_CY, 1), 90)   # Querformat
-    return g.translate((CLIP_CX, 0, 0)), g2.translate((CLIP_CX, 0, 0))
+    out = []
+    g = dt_groove_cutter(y_stop, CLIP_CY + OUTER).translate((CLIP_CX, 0, 0))
+    dimple = cq.Workplane("XY").sphere(1.0).translate((CLIP_CX + DT_XSHIFT, CLIP_CY + DETENT_Y, DT_TIP))
+    for sh in (g, dimple):
+        out.append(sh)
+        out.append(sh.rotate((CLIP_CX, CLIP_CY, 0), (CLIP_CX, CLIP_CY, 1), 90))
+    return out
 
 # ======================= Teile =======================
 def make_body():
@@ -173,11 +183,11 @@ def make_body():
     b = b.cut(rbox(INNER, INNER, Z_FLOOR_TOP, Z_BODY_TOP + 1, R_IN))
     # Akkufach (von hinten) + Deckelfuehrung
     b = b.cut(box(POCKET_X0, POCKET_X1, POCKET_Y0, POCKET_Y1, -1, CAV_H))
-    b = b.cut(box(-RECESS_HALF, RECESS_HALF, -OUTER / 2 - 1, RECESS_Y1, -1, RECESS_H))
+    b = b.cut(box(-RECESS_HALF, RECESS_HALF, -OUTER / 2 - 1, RECESS_Y1, RAIL_T, RAIL_T + DOOR_GROOVE_H))
     # Rasten-Mulden fuer Deckel (geschlossen)
     yb = DOOR_Y1 - 4.0
     for s in (-1, 1):
-        b = b.cut(cyl_z(s * RECESS_HALF, yb, -1, RECESS_H, 0.8))
+        b = b.cut(cyl_z(s * RECESS_HALF, yb, RAIL_T, RAIL_T + DOOR_GROOVE_H, 0.8))
     # Kabeldurchlass zum BAT-Stecker
     cx, cy = BAT_CABLE_X, BAT_CABLE_Y
     b = b.cut(box(max(cx - CABLE_SLOT[0] / 2, POCKET_X0 + 0.0), cx + CABLE_SLOT[0] / 2,
@@ -193,18 +203,25 @@ def make_body():
     keep = box(-RECESS_HALF - REAR_BLOCK, RECESS_HALF + REAR_BLOCK, -OUTER, RECESS_Y1 + REAR_BLOCK, -2, CAV_H + 1)
     keep = keep.union(box(CLIP_CX - REAR_BAND, CLIP_CX + REAR_BAND, -OUTER, OUTER, -2, CAV_H + 1))
     keep = keep.union(box(-OUTER, OUTER, CLIP_CY - REAR_BAND, CLIP_CY + REAR_BAND, -2, CAV_H + 1))
-    keep = keep.union(box(REAR_RIB_X - RIB_T / 2, REAR_RIB_X + RIB_T / 2, -OUTER, OUTER, -2, CAV_H + 1))
+    k = 1
+    while -h + k * REAR_RIB_PITCH < h - 1:
+        t0 = -h + k * REAR_RIB_PITCH
+        keep = keep.union(box(t0 - RIB_T / 2, t0 + RIB_T / 2, -OUTER, OUTER, -2, CAV_H + 1))
+        keep = keep.union(box(-OUTER, OUTER, t0 - RIB_T / 2, t0 + RIB_T / 2, -2, CAV_H + 1))
+        k += 1
+    if ANT_RECESS:   # Rippe direkt neben der Antennenzone (nicht darin)
+        keep = keep.union(box(ANT_X[0] - RIB_T, ANT_X[0], -OUTER, OUTER, -2, CAV_H + 1))
     void = box(-h, h, -h, h, -1, CAV_H).cut(keep)
     b = b.cut(void)
     # Antennenzone nochmals ganz frei (nur Boden)
     if ANT_RECESS:
         b = b.cut(box(ANT_X[0], ANT_X[1], ANT_Y[0], ANT_Y[1], -1, CAV_H))
-        b = b.cut(box(ANT_X[0], ANT_X[1], ANT_Y[0], ANT_Y[1], -1, CAV_H))
     # Standoffs mit Zentrierzapfen (Platinenloecher), Platine liegt auf Standoff-Oberseite
     g = HOLE_GRID / 2
     for sx, sy in itertools.product((-1, 1), (-1, 1)):
         b = b.union(cyl_z(sx * g, sy * g, Z_FLOOR_TOP - 0.2, Z_PCB_BACK, STANDOFF_OD / 2))
-        b = b.union(cyl_z(sx * g, sy * g, Z_PCB_BACK - 0.01, Z_PCB_BACK + PIN_H, PIN_D / 2))
+        pin = cyl_z(0, 0, 0, PIN_H, PIN_D / 2).faces(">Z").chamfer(0.3).translate((sx * g, sy * g, Z_PCB_BACK - 0.01))
+        b = b.union(pin)
     # Schraublocher Rahmen<->Koerper in den Ecken (ausserhalb der Platine)
     hole_d, hole_dp = (INSERT_D, INSERT_DEPTH) if USE_INSERTS else (PILOT_D, PILOT_DEPTH)
     for sx, sy in itertools.product((-1, 1), (-1, 1)):
@@ -215,6 +232,8 @@ def make_body():
     # TF-Karte (Oberkante)
     b = b.cut(box(TF_X - TF_W / 2, TF_X + TF_W / 2, BOARD / 2, OUTER / 2 + 1,
                   Z_PCB_BACK - 3.2, Z_PCB_BACK + 0.2))
+    # Fingermulde aussen, damit eine ausgeworfene Karte greifbar ist (Wand ist ~5 mm dick)
+    b = b.cut(box(TF_X - 9.0, TF_X + 9.0, OUTER / 2 - 2.0, OUTER / 2 + 1, Z_PCB_BACK - 4.5, Z_PCB_BACK + 1.5))
     # Seitentaster: Biegezungen (Scharnier am anderen Ende, Zungen laufen auseinander)
     wall_in = INNER / 2
     wall_out = OUTER / 2
@@ -224,7 +243,7 @@ def make_body():
     tabs = []
     for i, by in enumerate(BTN_Y):
         if i == 0:   # oberer Taster: Scharnier oben, freies Ende unten
-            free, hinge = by - 2.0, by - 2.0 + BTN_TAB_L
+            free, hinge = by - 2.0, by - 2.0 + BTN_TAB_L   # Stoessel 2 mm vom freien Ende
         else:        # unterer Taster: Scharnier unten, freies Ende oben
             free, hinge = by + 2.0, by + 2.0 - BTN_TAB_L
         tabs.append((by, min(free, hinge), max(free, hinge), free))
@@ -262,13 +281,13 @@ def make_bezel():
     g = SCREW_C
     for sx, sy in itertools.product((-1, 1), (-1, 1)):
         bz = bz.cut(cyl_z(sx * g, sy * g, Z_BODY_TOP - 1, zt + 1, 1.2))
-        cone = (cq.Workplane("XY").workplane(offset=zt - 1.1).center(sx * g, sy * g).circle(1.2)
-                .workplane(offset=1.2).circle(CSK_D / 2).loft())
+        cone = (cq.Workplane("XY").workplane(offset=zt - 1.0).center(sx * g, sy * g).circle(1.2)
+                .workplane(offset=1.01).circle(CSK_D / 2 + 0.01).loft())
         bz = bz.cut(cone)
     return bz
 
 def make_door():
-    d = box(-DOOR_W / 2, DOOR_W / 2, DOOR_Y0, DOOR_Y1, 0, DOOR_T)
+    d = box(-DOOR_W / 2, DOOR_W / 2, DOOR_Y0, DOOR_Y1, 0, DOOR_T)   # lokal Z 0..DOOR_T, am Ende um RAIL_T versetzt
     yb = DOOR_Y1 - 4.0
     fw, sl, flen = 2.0, 0.8, 16.0
     for s in (-1, 1):
@@ -284,7 +303,7 @@ def make_door():
     # Rundmulde: Zylinder quer (Achse X), 22 mm breit
     sph = (cq.Workplane("YZ", origin=(-11, 0, 0)).center(DOOR_Y0 + 9.0, -(R - depth)).circle(R).extrude(22))
     d = d.cut(sph)
-    return d
+    return d.translate((0, 0, DOOR_Z0))
 
 def make_clip():
     xs, n, d = DT_XSHIFT, DT_NECK / 2, DT_DEPTH
@@ -295,6 +314,8 @@ def make_clip():
     pts = [(xs - n + c, z_pl_top), (xs + n - 0.5 - k - c, z_pl_top),
            (xs + n - k + tip, tip), (xs - n + c, tip)]
     ridge = prism_y(pts, -CLIP_RIDGE_L / 2, CLIP_RIDGE_L / 2)
+    ridge = ridge.faces(">Z").edges("|Y").fillet(0.6)          # Spitze verrunden
+    ridge = ridge.union(cq.Workplane("XY").sphere(0.55).translate((xs, DETENT_Y, tip)))   # Rastnase
     plate = box(-CLIP_PLATE_X / 2, CLIP_PLATE_X / 2, -CLIP_PLATE_Y / 2, CLIP_PLATE_Y / 2,
                 z_pl_top - CLIP_PLATE_T, z_pl_top + 0.01)
     z0 = z_pl_top - CLIP_PLATE_T
@@ -335,8 +356,41 @@ def to_plate(wp, kind, cx, cy):
 
 # ======================= Export / Pruefungen =======================
 def tess(wp, tol=0.05, ang=0.2):
+    """Tesselliert und verschweisst Eckpunkte (Rundung auf 1e-4) -> geschlossene Netze."""
     v, t = wp.val().tessellate(tol, ang)
-    return [(p.x, p.y, p.z) for p in v], t
+    idx, verts, remap = {}, [], []
+    for p in v:
+        key = (round(p.x, 4), round(p.y, 4), round(p.z, 4))
+        if key not in idx:
+            idx[key] = len(verts); verts.append(key)
+        remap.append(idx[key])
+    tris = []
+    for a, b, c in t:
+        a, b, c = remap[a], remap[b], remap[c]
+        if a != b and b != c and a != c:
+            tris.append((a, b, c))
+    return verts, tris
+
+def write_stl(path, wp, tol=0.02, ang=0.1):
+    import struct
+    v, t = tess(wp, tol, ang)
+    with open(path, "wb") as f:
+        f.write(b"enclosure.py".ljust(80, b" "))
+        f.write(struct.pack("<I", len(t)))
+        for a, b, c in t:
+            A, B, C = v[a], v[b], v[c]
+            u = [B[i] - A[i] for i in range(3)]; w = [C[i] - A[i] for i in range(3)]
+            n = [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0]]
+            l = math.sqrt(sum(x * x for x in n)) or 1.0
+            f.write(struct.pack("<12fH", *[x / l for x in n], *A, *B, *C, 0))
+
+def mesh_is_closed(verts, tris):
+    from collections import Counter
+    e = Counter()
+    for a, b, c in tris:
+        for u, v in ((a, b), (b, c), (c, a)):
+            e[(u, v)] += 1
+    return all(e[(v, u)] == n for (u, v), n in e.items())
 
 def write_3mf(path, parts):
     objs, items = [], []
@@ -428,8 +482,13 @@ def main():
     asm_parts["vent_clip"] = clip_asm
 
     # ---- Druckanordnung (220x220 Bett) ----
+    body_print = body
+    if BAT_STRUTS:   # Opfer-Stege (0.8 mm) tragen die Akkufach-Decke, vor dem Einlegen des Akkus ausbrechen
+        for sx in (-1, 1):
+            body_print = body_print.union(box(sx * BAT_L / 6 - 0.4, sx * BAT_L / 6 + 0.4,
+                                              POCKET_Y0, POCKET_Y1, 0, CAV_H + 0.01))
     plate_parts = [
-        ("body", to_plate(body, "none", 45, 45)),
+        ("body", to_plate(body_print, "none", 45, 45)),
         ("front_bezel", to_plate(bezel, "flipx", 130, 45)),
         ("battery_door", to_plate(door, "flipx", 45, 120)),
         ("vent_clip", to_plate(clip, "clip", 130, 120)),
@@ -480,14 +539,67 @@ def main():
         if a.xmin < b.xmax and b.xmin < a.xmax and a.ymin < b.ymax and b.ymin < a.ymax:
             ok = False; log(f"Ueberlappung {n1}/{n2}")
 
+    log("== Funktions-Probes ==")
+    from OCP.gp import gp_Pnt  # noqa
+    def inside(wp, x, y, z):
+        return bool(wp.val().isInside(cq.Vector(x, y, z), 1e-4))
+    def probe(name, cond):
+        nonlocal ok
+        log(f"{name:70s} {'OK' if cond else 'FEHLER'}")
+        ok &= bool(cond)
+    def void_run(wp, pts):
+        best = cur = 0.0
+        for i, pt in enumerate(pts):
+            if inside(wp, *pt):
+                cur = 0.0
+            else:
+                cur += 1.0 if i else 0.0
+                best = max(best, cur)
+        return best
+    xs_ = DT_XSHIFT
+    # 1) Nuten laufen bis zum Rand
+    pts = [(x, CLIP_CY + xs_, 1.0) for x in range(int(-OUTER / 2) + 1, int(CLIP_CX + CLIP_RIDGE_L / 2))]
+    probe("Nut Querformat frei von linker Aussenkante bis Anschlag", not any(inside(body, *q) for q in pts))
+    probe("Nut Querformat endet am Anschlag (Wand dahinter)", inside(body, CLIP_CX + CLIP_RIDGE_L / 2 + 1.0, CLIP_CY + xs_, 1.0))
+    pts = [(CLIP_CX + xs_, y, 1.0) for y in range(int(CLIP_CY - CLIP_RIDGE_L / 2), int(OUTER / 2))]
+    probe("Nut Hochformat frei von oberer Aussenkante bis Anschlag", not any(inside(body, *q) for q in pts))
+    # 2) Akkudeckel wird nach aussen (-Z) von der Lippe gehalten
+    bd = door.val().BoundingBox()
+    probe("Deckel liegt hinter der Lippe (zmin >= RAIL_T)", bd.zmin >= RAIL_T - 1e-6)
+    probe("Deckel ueberlappt Lippe >= 1.5 mm je Seite", bd.xmax - BAT_L / 2 >= 1.5 and -bd.xmin - BAT_L / 2 >= 1.5)
+    for sgn in (-1, 1):
+        x = sgn * (BAT_L / 2 + 1.0)
+        probe(f"Lippe (Koerper) unter dem Deckel bei x={x:+.0f}, z={RAIL_T/2:.1f}", inside(body, x, -10, RAIL_T / 2))
+        probe(f"Deckel sitzt in Nut bei x={x:+.0f}", inside(door, x, -10, RAIL_T + DOOR_T / 2) and not inside(body, x, -10, RAIL_T + DOOR_T / 2))
+    probe("Akkufach nach hinten offen (Oeffnung frei)", not inside(body, 0, -10, 0.2) and not inside(body, 0, -10, CAV_H - 0.5))
+    # 3) TF-Fenster
+    for dx in (-TF_W / 2 + 0.5, 0, TF_W / 2 - 0.5):
+        probe(f"TF-Fenster frei bei X={TF_X + dx:.1f}", not inside(body, TF_X + dx, 36.5, Z_PCB_BACK - 1.5))
+    probe("TF-Fingermulde aussen frei", not inside(body, TF_X, OUTER / 2 - 1.0, Z_PCB_BACK - 1.0))
+    probe("TF-Fenster ca. 15.3 mm, Wand daneben geschlossen", inside(body, TF_X + TF_W / 2 + 1.5, 36.5, Z_PCB_BACK - 1.5))
+    # 4) Rastnase Clip
+    probe("Rastmulde im Koerper vorhanden", not inside(body, CLIP_CX + xs_, CLIP_CY + DETENT_Y, DT_TIP + 0.8))
+    probe("Rastnase am Clip vorhanden", inside(clip_asm, CLIP_CX + xs_, CLIP_CY + DETENT_Y, DT_TIP + 0.3))
+    # 5) Bruecken-Spannweiten (Druckteil, Schnitt z=0.5)
+    lines = {"Akkufach": [(x, -20.0, 0.5) for x in range(-26, 27)],
+             "Hohlraum y=30": [(x * 1.0, 30.0, 0.5) for x in range(-35, 36)],
+             "Hohlraum y=-8 (rechts)": [(x * 1.0, -8.0, 0.5) for x in range(32, 36)],
+             "Hohlraum x=-33": [(-33.0, y * 1.0, 0.5) for y in range(-35, 36)]}
+    for nm, pts in lines.items():
+        r = void_run(body_print, pts)
+        probe(f"Maximale freie Spannweite {nm}: {r:.0f} mm <= 20", r <= 20)
+    # 6) Antenne frei
+    ax = [(x * 1.0, y * 1.0, 1.0) for x in range(int(ANT_X[0]) + 1, int(ANT_X[1])) for y in range(int(ANT_Y[0]) + 1, int(ANT_Y[1]))]
+    probe("Antennenzone rueckseitig frei (nur Boden)", not any(inside(body, *q) for q in ax))
+    probe("Clip-Mitte ausserhalb der Antennenzone", CLIP_CX - CLIP_PLATE_X / 2 > ANT_X[1] or CLIP_CY - CLIP_PLATE_Y / 2 > ANT_Y[1])
     log("RESULT: " + ("ALLE PRUEFUNGEN OK" if ok else "FEHLER"))
 
     # ---- Dateien ----
     for n, p in asm_parts.items():
         cq.exporters.export(p, os.path.join(OUT, f"{n}.step"))
     for (n, p) in plate_parts:
-        cq.exporters.export(p, os.path.join(OUT, f"{n}.stl"), tolerance=0.02, angularTolerance=0.1)
-    cq.exporters.export(dummy, os.path.join(OUT, "board_dummy.stl"), tolerance=0.05)
+        write_stl(os.path.join(OUT, f"{n}.stl"), p)
+    write_stl(os.path.join(OUT, "board_dummy.stl"), dummy, 0.05, 0.2)
     asm = cq.Assembly(name="assembly")
     cols = {"body": "gray70", "front_bezel": "gray20", "battery_door": "orange",
             "vent_clip": "steelblue", "board_dummy": "forestgreen"}
@@ -495,6 +607,20 @@ def main():
         asm.add(p, name=n, color=cq.Color(cols[n]))
     asm.save(os.path.join(OUT, "assembly.step"))
     write_3mf(os.path.join(OUT, "print_plate.3mf"), plate_parts)
+    import xml.etree.ElementTree as ET
+    with zipfile.ZipFile(os.path.join(OUT, "print_plate.3mf")) as z:
+        root = ET.fromstring(z.read("3D/3dmodel.model"))
+    ns = {"m": "http://schemas.microsoft.com/3dmanufacturing/core/2015/02"}
+    closed_all = True
+    for o in root.iterfind(".//m:object", ns):
+        vs = [tuple(map(float, (v.get("x"), v.get("y"), v.get("z")))) for v in o.iterfind(".//m:vertex", ns)]
+        ts = [(int(t.get("v1")), int(t.get("v2")), int(t.get("v3"))) for t in o.iterfind(".//m:triangle", ns)]
+        c = mesh_is_closed(vs, ts)
+        closed_all &= c
+        print(f"3MF {o.get('name')}: {len(vs)} Ecken, {len(ts)} Dreiecke, geschlossen={c}")
+        rep.append(f"3MF {o.get('name')}: geschlossen={c}")
+    if not closed_all:
+        rep.append("RESULT 3MF: FEHLER"); ok = False
 
     # Previews
     items = [(asm_parts[n], cols[n], (0, 0, 0)) for n in ("body", "board_dummy", "front_bezel", "battery_door", "vent_clip")]
