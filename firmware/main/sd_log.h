@@ -30,3 +30,4 @@ bool sd_log_active(void);
 void sd_log_submit(int64_t ts_us, const uint8_t *frame, size_t len);
 
 void sd_log_get_status(sd_log_status_t *out);
+void sd_log_reset_dropped(void);

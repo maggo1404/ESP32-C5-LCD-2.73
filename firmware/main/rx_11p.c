@@ -38,6 +38,7 @@ static uint8_t *s_pool;               /* POOL_SLOTS * SLOT_SIZE, PSRAM */
 static QueueHandle_t s_free_q;        /* uint8_t slot indices */
 static QueueHandle_t s_work_q;        /* rx_item_t */
 static rx_stats_t s_stats;
+static volatile uint16_t s_pending_channel; /* 0 = none */
 static const uint8_t BCAST[6] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 
 /* ---- Wi-Fi promiscuous callback (runs in the Wi-Fi task, no malloc) ---- */
@@ -109,6 +110,17 @@ static void worker_task(void *arg)
             }
             xQueueSend(s_free_q, &it.slot, 0);
         }
+        uint16_t ch = s_pending_channel;
+        if (ch) {
+            s_pending_channel = 0;
+            ESP_LOGI(TAG, "Kanal %u MHz", ch);
+            phy_change_channel(ch, 1, 0, 0);
+            /* drop frames queued from the previous channel */
+            rx_item_t old;
+            while (xQueueReceive(s_work_q, &old, 0) == pdTRUE) {
+                xQueueSend(s_free_q, &old.slot, 0);
+            }
+        }
         int64_t now = esp_timer_get_time();
         if (now - last_tick >= 1000000) {
             last_tick = now;
@@ -119,8 +131,13 @@ static void worker_task(void *arg)
 
 void rx_set_channel(uint16_t channel_mhz)
 {
-    ESP_LOGI(TAG, "Kanal %u MHz", channel_mhz);
-    phy_change_channel(channel_mhz, 1, 0, 0);
+    /* executed by the worker task (not by the caller, e.g. the LVGL task) */
+    s_pending_channel = channel_mhz;
+}
+
+void rx_reset_stats(void)
+{
+    memset(&s_stats, 0, sizeof(s_stats));
 }
 
 void rx_get_stats(rx_stats_t *out)

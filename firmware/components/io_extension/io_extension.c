@@ -18,6 +18,13 @@
 #include "esp_check.h"
 static const char *TAG = "io exio";
 
+/* Local changes (see NOTICE.md): finite I2C timeouts, rate-limited error
+ * prints, IO5 (USB/CAN select) initialised low = USB. */
+#define IO_I2C_TIMEOUT_MS 100
+static uint32_t s_err_count;
+static void DEV_I2C_Write_Nbyte(uint8_t *pdata, uint8_t len);
+#define IO_ERR_PRINT(...) do { if (s_err_count++ < 5 || (s_err_count % 100) == 0) printf(__VA_ARGS__); } while (0)
+
 io_extension_obj_t IO_EXTENSION;  // Define the global IO_EXTENSION object
 static i2c_master_bus_handle_t  s_i2c_bus  = NULL;
 static i2c_master_dev_handle_t  s_i2c_dev  = NULL;
@@ -42,7 +49,12 @@ esp_err_t IO_EXTENSION_Init(i2c_port_num_t port_num)
     IO_EXTENSION_IO_Mode(0xFFF7); // Set all pins to output mode
 
     // Initialize control flags for IO output enable and open-drain output mode
-    IO_EXTENSION.Last_io_value = 0xFFFF; // All pins are initially set to high (output mode)
+    IO_EXTENSION.Last_io_value = 0xFFFF & ~(1U << IO_EXTENSION_IO_5); // all high except IO5 (0 = USB)
+    {
+        uint8_t data[3] = { IO_EXTENSION_IO_OUTPUT_ADDR, (uint8_t)(IO_EXTENSION.Last_io_value & 0xFF),
+                            (uint8_t)(IO_EXTENSION.Last_io_value >> 8) };
+        DEV_I2C_Write_Nbyte(data, 3);
+    }
 
     return ESP_OK;
 }
@@ -56,9 +68,9 @@ static void DEV_I2C_Write_Byte(uint8_t Cmd, uint8_t value)
 {
     uint8_t buf[2] = { Cmd, value };
 
-    esp_err_t ret = i2c_master_transmit(s_i2c_dev, buf, sizeof(buf), -1);
+    esp_err_t ret = i2c_master_transmit(s_i2c_dev, buf, sizeof(buf), IO_I2C_TIMEOUT_MS);
     if (ret != ESP_OK) {
-        printf("The I2C transmission fails. - I2C Write, err=0x%x\r\n", ret);
+        IO_ERR_PRINT("The I2C transmission fails. - I2C Write, err=0x%x\r\n", ret);
     }
 }
 
@@ -77,9 +89,9 @@ static uint16_t DEV_I2C_Read_Word(uint8_t Cmd)
                         s_i2c_dev,
                         &cmd, 1,        // 写 1 字节命令
                         data, 2,        // 读 2 字节
-                        -1);
+                        IO_I2C_TIMEOUT_MS);
     if (ret != ESP_OK) {
-        printf("I2C Read Word failed, err=0x%x\r\n", ret);
+        IO_ERR_PRINT("I2C Read Word failed, err=0x%x\r\n", ret);
         return 0;
     }
 
@@ -94,9 +106,9 @@ static uint16_t DEV_I2C_Read_Word(uint8_t Cmd)
  */
 static void DEV_I2C_Write_Nbyte(uint8_t *pdata, uint8_t len)
 {
-    esp_err_t ret = i2c_master_transmit(s_i2c_dev, pdata, len, -1);
+    esp_err_t ret = i2c_master_transmit(s_i2c_dev, pdata, len, IO_I2C_TIMEOUT_MS);
     if (ret != ESP_OK) {
-        printf("I2C Write Nbyte failed! err=0x%x\r\n", ret);
+        IO_ERR_PRINT("I2C Write Nbyte failed! err=0x%x\r\n", ret);
     }
 }
 
@@ -113,9 +125,9 @@ static void DEV_I2C_Read_Nbyte(uint8_t Cmd, uint8_t *pdata, uint8_t len)
                         s_i2c_dev,
                         &cmd, 1,        // 写 1 字节寄存器地址
                         pdata, len,     // 读 len 字节
-                        -1);
+                        IO_I2C_TIMEOUT_MS);
     if (ret != ESP_OK) {
-        printf("I2C Read Nbyte failed! err=0x%x\r\n", ret);
+        IO_ERR_PRINT("I2C Read Nbyte failed! err=0x%x\r\n", ret);
     }
 }
 

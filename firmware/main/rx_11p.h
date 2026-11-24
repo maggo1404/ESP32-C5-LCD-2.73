@@ -16,7 +16,8 @@ typedef struct {
  * starts the worker task (ingest, USB output, SD log, 1 Hz store tick). */
 esp_err_t rx_start(uint16_t channel_mhz);
 
-/* Switch the 5.9 GHz channel live (5860..5920 MHz). */
+/* Request a channel switch (5860..5920 MHz); done by the worker task. */
 void rx_set_channel(uint16_t channel_mhz);
 
 void rx_get_stats(rx_stats_t *out);
+void rx_reset_stats(void);

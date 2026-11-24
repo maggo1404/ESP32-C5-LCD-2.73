@@ -1,5 +1,7 @@
-# Move the .bss of the decoder component (state store ~70 KB, decode scratch
-# ~22 KB) into PSRAM. Needs CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY.
+# Move the .bss of the decoder store (s_store ~71 KB + decode scratch ~22 KB,
+# ~93 KB total) into PSRAM to leave more internal RAM for Wi-Fi, LVGL and DMA
+# buffers. Needs CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY (which makes IDF
+# itself place the Wi-Fi/lwip .bss in PSRAM as well).
 [mapping:its_store_psram]
 archive: libits.a
 entries:

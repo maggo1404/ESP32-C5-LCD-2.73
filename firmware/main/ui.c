@@ -363,8 +363,8 @@ static void build_topbar(lv_obj_t *scr)
 
 static void build_titlebar(lv_obj_t *scr)
 {
-    s_title = mk_label(scr, 6, TITLE_Y + 2, 190, ui_f20, C_TEXT, LV_TEXT_ALIGN_LEFT);
-    s_hint = mk_label(scr, 160, TITLE_Y + 8, 156, ui_f12, C_DIM, LV_TEXT_ALIGN_RIGHT);
+    s_title = mk_label(scr, 6, TITLE_Y + 2, 150, ui_f20, C_TEXT, LV_TEXT_ALIGN_LEFT);
+    s_hint = mk_label(scr, 158, TITLE_Y + 8, 158, ui_f12, C_DIM, LV_TEXT_ALIGN_RIGHT);
 }
 
 static void build_tabs(lv_obj_t *scr)
@@ -718,12 +718,14 @@ static void update_warnings(void)
 }
 
 #define SET_ROWS 5
+static int s_edit_ch; /* pending channel while editing */
 
 static void update_settings(void)
 {
     settings_t c = settings_get();
     char v[SET_ROWS][32];
-    snprintf(v[0], sizeof(v[0]), "%u MHz%s", (unsigned)c.channel, channel_name(c.channel));
+    unsigned shown_ch = (s_nav == NAV_EDIT && s_sel[PAGE_SETTINGS] == 0) ? (unsigned)s_edit_ch : (unsigned)c.channel;
+    snprintf(v[0], sizeof(v[0]), "%u MHz%s", shown_ch, channel_name((uint16_t)shown_ch));
     snprintf(v[1], sizeof(v[1]), "%s", c.sd_log ? "an" : "aus");
     snprintf(v[2], sizeof(v[2]), "%s", c.usb_out ? "an" : "aus");
     snprintf(v[3], sizeof(v[3]), "%u %%", (unsigned)c.brightness);
@@ -847,16 +849,26 @@ static void list_move(int d)
     s_key_dn_valid = s_key_dn_valid && s_page != PAGE_WARN;
 }
 
+static void leave_edit(void)
+{
+    if (s_sel[PAGE_SETTINGS] == 0 && s_edit_ch != (int)settings_get().channel) {
+        settings_set_channel((uint16_t)s_edit_ch);
+        rx_set_channel((uint16_t)s_edit_ch);
+    }
+    settings_save();
+    s_nav = NAV_LIST;
+}
+
 static void settings_adjust(int d)
 {
     settings_t c = settings_get();
     int r = s_sel[PAGE_SETTINGS];
     if (r == 0) {
-        int ch = (int)c.channel + d * RX_CHANNEL_STEP_MHZ;
+        /* only changes the pending value; applied when the edit is confirmed */
+        int ch = s_edit_ch + d * RX_CHANNEL_STEP_MHZ;
         if (ch < RX_CHANNEL_MIN_MHZ) ch = RX_CHANNEL_MAX_MHZ;
         if (ch > RX_CHANNEL_MAX_MHZ) ch = RX_CHANNEL_MIN_MHZ;
-        settings_set_channel((uint16_t)ch);
-        rx_set_channel((uint16_t)ch);
+        s_edit_ch = ch;
     } else if (r == 3) {
         int b = (int)c.brightness + d * 10;
         if (b < 10) b = 10;
@@ -871,6 +883,9 @@ static void settings_activate(void)
     settings_t c = settings_get();
     switch (s_sel[PAGE_SETTINGS]) {
     case 0:
+        s_edit_ch = c.channel;
+        s_nav = NAV_EDIT;
+        break;
     case 3:
         s_nav = NAV_EDIT;
         break;
@@ -884,6 +899,8 @@ static void settings_activate(void)
         break;
     case 4:
         its_store_clear();
+        rx_reset_stats();
+        sd_log_reset_dropped();
         break;
     }
 }
@@ -912,8 +929,7 @@ static void enter_pressed(void)
         }
         break;
     case NAV_EDIT:
-        settings_save();
-        s_nav = NAV_LIST;
+        leave_edit();
         break;
     }
 }
@@ -922,8 +938,7 @@ static void back_pressed(void)
 {
     switch (s_nav) {
     case NAV_EDIT:
-        settings_save();
-        s_nav = NAV_LIST;
+        leave_edit();
         break;
     case NAV_DETAIL:
         s_nav = NAV_LIST;

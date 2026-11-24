@@ -5,6 +5,7 @@
 #include "driver/usb_serial_jtag.h"
 #include "esp_attr.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 
 static const char *TAG = "usb_out";
@@ -15,6 +16,7 @@ static const char *TAG = "usb_out";
 #define SLIP_ESC_ESC 0xDD
 
 static bool s_installed;
+static int64_t s_backoff_until_us; /* only used from the worker task */
 /* Only used from the worker task. */
 static EXT_RAM_BSS_ATTR uint8_t s_enc[2 * RX_FRAME_MAX + 2];
 
@@ -64,9 +66,17 @@ bool usb_out_send_frame(const uint8_t *frame, size_t len)
     if (!usb_out_connected() || len == 0 || len > RX_FRAME_MAX) {
         return false;
     }
+    int64_t now = esp_timer_get_time();
+    if (now < s_backoff_until_us) {
+        return false; /* host enumerated the port but does not read: stay out of the way */
+    }
     size_t n = usb_out_slip_encode(frame, len, s_enc);
-    /* Short timeout: if the host stops reading we drop instead of stalling
-     * the decoder. */
-    int w = usb_serial_jtag_write_bytes(s_enc, n, pdMS_TO_TICKS(20));
-    return w == (int)n;
+    /* Never wait: ingest must not be delayed by USB. If the TX buffer is
+     * full (nobody reads), drop and back off for 1 s. */
+    int w = usb_serial_jtag_write_bytes(s_enc, n, 0);
+    if (w != (int)n) {
+        s_backoff_until_us = now + 1000000;
+        return false;
+    }
+    return true;
 }

@@ -35,12 +35,12 @@ idf.py build
 
 LVGL kommt als Registry-Komponente `lvgl/lvgl ~8.4` (`main/idf_component.yml`) und
 wird beim ersten Konfigurieren geladen (Internetzugang zu `components.espressif.com`
-nötig). Hinweis: `LV_COLOR_16_SWAP=y` ist erforderlich, der ILI9488-Treiber
+nötig). Der Bootloader nutzt Log-Level WARN, damit er in die 0x6000 Bytes vor der Partitionstabelle passt. Hinweis: `LV_COLOR_16_SWAP=y` ist erforderlich, der ILI9488-Treiber
 erwartet byte-vertauschtes RGB565.
 
-Ergebnis (v5.5.6): App ca. 1,46 MB (`0x176370` Bytes) in der 6-MB-Partition, 76 % frei;
-Bootloader 0x5510 Bytes; interner RAM beim Booten rund 190 kB frei (der Decoder-Store
-und die Wi-Fi-`.bss` liegen im PSRAM, siehe `main/linker.lf`).
+Ergebnis (v5.5.6): App ca. 1,46 MB (`0x1766e0` Bytes) in der 6-MB-Partition, 76 % frei;
+Bootloader 0x4c90 Bytes (20 % frei); interner RAM nach dem Linken rund 190 kB frei (der Decoder-Store
+(~93 kB `.bss`) liegt im PSRAM, siehe `main/linker.lf`; IDF verlagert dabei auch die Wi-Fi-`.bss`).
 
 ## Flashen
 
@@ -107,7 +107,7 @@ SLIP-kodiert und auf den USB-CDC-Port geschrieben:
 
 Das entspricht dem „raw“-Modus der simple-its-g5-receiver-Firmware und ist
 kompatibel zu `sl2mqtt3`. Es gibt keine Zeitstempel/RSSI im Strom. Wenn der Host
-nicht liest oder nicht verbunden ist, werden Frames verworfen (kein Blockieren).
+nicht liest (USB-Puffer voll), werden Frames verworfen und der Port 1 s lang nicht mehr beschrieben; der Decoder wird nie durch USB verzögert (Schreiben ohne Wartezeit).
 Das Port-Symbol in der Statuszeile ist grau (aus), gelb (an, kein Host) oder grün
 (Host verbunden).
 
@@ -150,7 +150,7 @@ Ebenen: **Seitenleiste** (unten markiert) → *Liste* → *Detail*.
   und **Karte** (in der Karte wechseln PREV/NEXT die Kreuzung), langes ENTER zurück.
 * Einstellungen: ENTER bei *Kanal*/*Helligkeit* startet das Ändern (PREV/NEXT ändern den Wert,
   ENTER oder lang beendet), *SD-Log*/*USB-Ausgabe* schalten direkt um,
-  *Zähler löschen* leert Stationen/Ampeln/Warnungen. Alles wird in NVS gespeichert.
+  *Zähler löschen* leert Stationen/Ampeln/Warnungen und setzt die Verlustzähler zurück. Alles wird in NVS gespeichert.
 
 ### Seiten
 
@@ -172,7 +172,7 @@ rot = Fehler), Akkuspannung.
 ## Kanäle
 
 Standard ist **5900 MHz** (G5-CCH). Wählbar (Einstellungen) sind 5860, 5870, 5880, 5890, 5900, 5910
-und 5920 MHz; die Umschaltung erfolgt live über `phy_change_channel()`:
+und 5920 MHz; die Umschaltung erfolgt nach dem Bestätigen (ENTER) im Worker-Task über `phy_change_channel()`, danach werden noch wartende Frames des alten Kanals verworfen:
 5860 = SCH4, 5870 = SCH3, 5880 = SCH1, 5890 = SCH2, 5900 = CCH. Es wird immer 10-MHz-Kanalbreite
 (802.11p) empfangen. Übliche Quellen: Ampeln (MAPEM/SPATEM) und Fahrzeuge (CAM) auf 5900 MHz.
 
@@ -187,7 +187,7 @@ und 5920 MHz; die Umschaltung erfolgt live über `phy_change_channel()`:
 * LCD und SD-Karte teilen SPI2 (SCLK 6, MOSI 7, MISO 5; CS 8 bzw. 9). Der SPI-Master-Treiber
   serialisiert die Zugriffe beider Geräte; der SD-Treiber hält den Bus pro Transaktion exklusiv
   (`spi_device_acquire_bus`), LVGL-Flushes warten dann kurz. Der SD-Task schreibt gesammelt
-  (16-kB-Blöcke) und blockiert den Decoder nie.
+  (8-kB-Blöcke im internen RAM) und blockiert den Decoder nie.
 * LVGL 8.4 läuft in einem einzigen Task, nur dieser ruft LVGL auf. Die UI kopiert die benötigten
   Teile des Stores unter dem Store-Lock in statische Snapshots (kurze Sperrzeit) und aktualisiert
   alle 250 ms.
@@ -199,5 +199,5 @@ Gebaut und statisch geprüft wurde nur mit ESP-IDF v5.5.6; ein Lauf auf dem Boar
 Verfügung. Unbestätigt sind insbesondere: Empfang auf dem C5 (insb. die Frame-Länge:
 verwendet wird `sig_len - 4`, ersatzweise begrenzt durch `dump_len`, OpenTrafficMap nutzt `dump_len`),
 Farbwiedergabe/Byte-Reihenfolge des Displays, SPI-Takt 40 MHz, Akku-ADC-Skalierung (Faktor 3 laut
-Waveshare-Demo), IO-Expander-Pin 5 (wird wie im Demo nicht verändert), SD-Hotplug, USB-SLIP-Durchsatz
-und der RAM-Bedarf zur Laufzeit (rund 190 kB interner RAM sind nach dem Linken frei).
+Waveshare-Demo), IO-Expander-Pin 5 (USB/CAN-Auswahl, wird beim Start auf 0 = USB gesetzt), SD-Hotplug, USB-SLIP-Durchsatz
+und der RAM-Bedarf zur Laufzeit.

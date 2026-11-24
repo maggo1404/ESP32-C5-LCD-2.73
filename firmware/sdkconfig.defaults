@@ -1,3 +1,6 @@
+# smaller bootloader (it only has 0x6000 bytes before the partition table)
+CONFIG_BOOTLOADER_LOG_LEVEL_WARN=y
+
 # --- target / flash / partitions ---------------------------------------
 CONFIG_IDF_TARGET="esp32c5"
 CONFIG_ESPTOOLPY_FLASHMODE_DIO=y
@@ -18,11 +21,13 @@ CONFIG_COMPILER_OPTIMIZATION_PERF=y
 CONFIG_SPIRAM=y
 CONFIG_SPIRAM_MODE_QUAD=y
 CONFIG_SPIRAM_SPEED_80M=y
+CONFIG_SPIRAM_MEMTEST=n
 CONFIG_SPIRAM_USE_MALLOC=y
 CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL=1024
 CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL=32768
-# .bss of the decoder store (~90 KB) and of the Wi-Fi libs goes to PSRAM,
-# see main/linker.lf. Internal RAM (320 KB) is otherwise nearly full.
+# Needed for the extram_bss linker scheme: the decoder store (~93 KB .bss) is
+# moved to PSRAM by main/linker.lf. (IDF itself then also puts the .bss of the
+# Wi-Fi/lwip libs into PSRAM.)
 CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY=y
 
 # --- Wi-Fi: receive only, trim memory ------------------------------------

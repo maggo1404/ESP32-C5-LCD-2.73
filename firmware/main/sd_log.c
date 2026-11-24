@@ -23,7 +23,7 @@
 static const char *TAG = "sd_log";
 
 #define MSGBUF_SIZE    (192 * 1024)   /* in PSRAM, absorbs SD write latency */
-#define BATCH_SIZE     (16 * 1024)
+#define BATCH_SIZE     (8 * 1024)
 #define PCAP_HDR_LEN   16
 #define RETRY_MS       4000
 #define SYNC_MS        2000
@@ -66,6 +66,8 @@ void sd_log_get_status(sd_log_status_t *out)
     portEXIT_CRITICAL(&s_lock);
     out->dropped = s_dropped;
 }
+
+void sd_log_reset_dropped(void) { s_dropped = 0; }
 
 bool sd_log_active(void) { return s_active; }
 
@@ -177,7 +179,11 @@ static void drain_discard(void)
 static void sd_task(void *arg)
 {
     (void)arg;
-    uint8_t *batch = heap_caps_malloc(BATCH_SIZE + PCAP_HDR_LEN + RX_FRAME_MAX, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    /* internal DMA-capable RAM: the SD driver sends from this buffer */
+    uint8_t *batch = heap_caps_malloc(BATCH_SIZE + PCAP_HDR_LEN + RX_FRAME_MAX, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_8BIT);
+    if (!batch) {
+        batch = heap_caps_malloc(BATCH_SIZE + PCAP_HDR_LEN + RX_FRAME_MAX, MALLOC_CAP_8BIT);
+    }
     uint8_t *rec = malloc(PCAP_HDR_LEN + RX_FRAME_MAX);
     if (!batch || !rec) {
         ESP_LOGE(TAG, "kein Speicher");

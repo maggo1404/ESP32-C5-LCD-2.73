@@ -9,6 +9,7 @@
 #include "esp_lcd_ili9488.h"
 #include "esp_lcd_panel_vendor.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "io_extension.h"
@@ -35,7 +36,8 @@ esp_err_t board_init(void)
         .flags.enable_internal_pullup = true,
     };
     ESP_RETURN_ON_ERROR(i2c_new_master_bus(&i2c_cfg, &s_i2c), TAG, "I2C bus");
-    s_expander_ok = IO_EXTENSION_Init(I2C_NUM_0) == ESP_OK;
+    s_expander_ok = i2c_master_probe(s_i2c, IO_EXTENSION_ADDR, 100) == ESP_OK &&
+                    IO_EXTENSION_Init(I2C_NUM_0) == ESP_OK;
     if (!s_expander_ok) {
         ESP_LOGW(TAG, "IO expander nicht erreichbar");
     }
@@ -46,7 +48,9 @@ esp_err_t board_init(void)
     vTaskDelay(pdMS_TO_TICKS(10));
 
     /* Keep the SD card deselected (CS high) until the SD driver takes the pin. */
-    gpio_set_direction(PIN_SD_CS, GPIO_MODE_OUTPUT);
+    gpio_reset_pin(PIN_SD_CS);
+    const gpio_config_t cs_cfg = {.pin_bit_mask = 1ULL << PIN_SD_CS, .mode = GPIO_MODE_OUTPUT};
+    gpio_config(&cs_cfg);
     gpio_set_level(PIN_SD_CS, 1);
 
     /* ---- shared SPI bus (LCD + SD card) ---- */
@@ -103,13 +107,22 @@ void board_set_backlight(int percent)
 
 float board_battery_volts(void)
 {
+    /* cached: the I2C read is only repeated every 3 s so the UI never waits on it */
+    static float cached = -1.0f;
+    static int64_t last_us;
     if (!s_expander_ok) {
         return -1.0f;
     }
-    uint16_t raw = IO_EXTENSION_Adc_Input();
-    if (raw == 0 || raw > 4095) {
-        return -1.0f;
+    int64_t now = esp_timer_get_time();
+    if (last_us == 0 || now - last_us >= 3000000) {
+        last_us = now;
+        uint16_t raw = IO_EXTENSION_Adc_Input();
+        if (raw == 0 || raw > 4095) {
+            cached = -1.0f;
+        } else {
+            /* 12 bit ADC, 3.3 V reference, 1:3 divider (as in the Waveshare demo) */
+            cached = (float)raw * 3.3f / 4095.0f * 3.0f;
+        }
     }
-    /* 12 bit ADC, 3.3 V reference, 1:3 divider (as in the Waveshare demo) */
-    return (float)raw * 3.3f / 4095.0f * 3.0f;
+    return cached;
 }

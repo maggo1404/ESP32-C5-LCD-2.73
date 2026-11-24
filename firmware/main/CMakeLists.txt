@@ -12,6 +12,7 @@ idf_component_register(
         ui_fonts.c
         ui_lights.c
     INCLUDE_DIRS "."
+    # embedded TTF -> `ttf_start`/`ttf_end` symbols (see ui_fonts.c)
     EMBED_FILES "fonts/Montserrat-Medium.ttf"
     LDFRAGMENTS "linker.lf"
     REQUIRES
@@ -20,5 +21,4 @@ idf_component_register(
         esp_driver_usb_serial_jtag fatfs sdmmc vfs nvs_flash esp_hw_support heap
 )
 
-# Generated/embedded TTF -> `ttf_start` symbols (see ui_fonts.c)
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wall -Wextra)
