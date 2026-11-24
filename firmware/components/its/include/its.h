@@ -232,7 +232,7 @@ typedef struct {
     int64_t  last_seen_us;
     int8_t   rssi;
     uint32_t msg_mask;           /* bit (1<<message_id) for each type seen */
-    uint32_t packets;
+    uint32_t packets;            /* 0 = slot unused */
     bool     has_cam;
     its_cam_t cam;
 } its_station_t;
@@ -285,7 +285,7 @@ typedef struct {
     its_store_intersection_t intersections[ITS_STORE_MAX_INTERSECTIONS];
     its_store_denm_t denms[ITS_STORE_MAX_DENMS];
     its_recent_t recent[ITS_STORE_RECENT];  /* ring buffer */
-    uint8_t  recent_head;
+    uint8_t  recent_head;        /* index of the NEXT slot to write; newest = (head+N-1)%N */
 } its_store_t;
 
 /* Platform hooks; weak no-op defaults in its_store.c, firmware overrides
