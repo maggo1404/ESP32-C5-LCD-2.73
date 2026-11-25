@@ -87,12 +87,21 @@ static void diag_capture(diag_reason_t reason, wifi_promiscuous_pkt_type_t type,
     d->rx_state = (uint8_t)pkt->rx_ctrl.rx_state;
     d->rssi = (int8_t)pkt->rx_ctrl.rssi;
     d->sig_len = (uint16_t)pkt->rx_ctrl.sig_len;
-    uint32_t n = pkt->rx_ctrl.sig_len;
+    /* Only copy bytes the driver really delivered: MISC packets have a
+     * zero-length payload (esp_wifi_types_generic.h), and for errored frames
+     * sig_len is just the PHY SIG field. On HE chips dump_len is the delivered
+     * length (0 = nothing); without it, copy only from valid frames. */
+    uint32_t n = 0;
+    if (type != WIFI_PKT_MISC) {
 #if CONFIG_SOC_WIFI_HE_SUPPORT
-    if (pkt->rx_ctrl.dump_len > 0 && pkt->rx_ctrl.dump_len < n) {
-        n = pkt->rx_ctrl.dump_len;
-    }
+        n = pkt->rx_ctrl.sig_len;
+        if (pkt->rx_ctrl.dump_len < n) {
+            n = pkt->rx_ctrl.dump_len;
+        }
+#else
+        n = pkt->rx_ctrl.rx_state == 0 ? pkt->rx_ctrl.sig_len : 0;
 #endif
+    }
     if (n > DIAG_BYTES) n = DIAG_BYTES;
     d->n = (uint8_t)n;
     memcpy(d->data, pkt->payload, n);

@@ -69,13 +69,19 @@ static int log_vprintf(const char *fmt, va_list ap)
     if (!settings_get().usb_out) {
         return vprintf(fmt, ap);
     }
-    char line[200];
+    char line[256];
     int n = vsnprintf(line, sizeof(line), fmt, ap);
-    for (int i = 0; i < n && i < (int)sizeof(line) - 1; i++) {
+    int m = n < (int)sizeof(line) - 1 ? n : (int)sizeof(line) - 1;
+    for (int i = 0; i < m; i++) {
         if (line[i] == '\n') {
             esp_rom_output_tx_one_char('\r');
         }
         esp_rom_output_tx_one_char((uint8_t)line[i]);
+    }
+    if (n > m && m > 0 && line[m - 1] != '\n') {
+        /* truncated: still end the line so the next one does not glue on */
+        esp_rom_output_tx_one_char('\r');
+        esp_rom_output_tx_one_char('\n');
     }
     return n;
 }
