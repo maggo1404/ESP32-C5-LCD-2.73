@@ -10,9 +10,12 @@ const MODELS = [
   { id: 'vent_clip', label: 'Lüftungs-Clip' },
   { id: 'assembly_exploded', label: 'Explosionsansicht' },
 ];
-const HINT = 'Ziehen: drehen · Scrollen: zoomen · Rechtsklick: verschieben';
+const HINT_MOUSE = 'Ziehen: drehen · Scrollen: zoomen · Rechtsklick: verschieben';
+const HINT_TOUCH = 'Ziehen: drehen · Zwei Finger: zoomen/verschieben';
+const isTouch = () => window.matchMedia('(pointer: coarse)').matches;
 
-let viewer = null; // { dialog, ... } einmal aufgebaut, bei jedem Oeffnen neu gestartet
+let viewer = null; // DOM einmal aufgebaut, bei jedem Oeffnen neu gestartet
+let gen = 0;       // Generationszaehler: jedes Oeffnen/Schliessen erhoeht ihn, veraltete awaits brechen ab
 let threePromise = null;
 
 function loadThree() {
@@ -39,26 +42,23 @@ function buildDom() {
   const dialog = el('dialog', 'cad-dialog');
   dialog.setAttribute('aria-label', '3D-Ansicht des Gehäuses');
   const stage = el('div', 'cad-stage');
-  const ui = el('div', 'cad-ui');
   const close = el('button', 'cad-close', '×');
   close.type = 'button';
   close.setAttribute('aria-label', 'Schließen');
   const bar = el('div', 'cad-bar');
   const tabs = el('div', 'cad-tabs');
-  tabs.setAttribute('role', 'tablist');
-  const hint = el('div', 'cad-hint', HINT);
+  tabs.setAttribute('aria-label', 'Modell wählen');
+  const hint = el('div', 'cad-hint', HINT_MOUSE);
   const status = el('div', 'cad-status');
   status.setAttribute('role', 'status');
   bar.append(tabs, hint);
-  ui.append(close, status, bar);
-  dialog.append(stage, ui);
+  dialog.append(stage, close, status, bar);
   document.body.append(dialog);
 
   const buttons = MODELS.map((m) => {
     const b = el('button', 'cad-tab');
     b.type = 'button';
     b.dataset.model = m.id;
-    b.setAttribute('role', 'tab');
     const img = el('img');
     img.alt = '';
     img.loading = 'lazy';
@@ -68,7 +68,7 @@ function buildDom() {
     tabs.append(b);
     return b;
   });
-  return { dialog, stage, close, tabs, buttons, status };
+  return { dialog, stage, close, tabs, buttons, status, hint };
 }
 
 function disposeObject(root) {
@@ -86,33 +86,46 @@ function disposeObject(root) {
 async function open(initial) {
   if (!viewer) {
     viewer = buildDom();
-    viewer.dialog.addEventListener('click', (e) => { if (e.target === viewer.dialog) viewer.dialog.close(); });
     viewer.close.addEventListener('click', () => viewer.dialog.close());
   }
   const v = viewer;
   const { dialog, stage, status, buttons } = v;
   if (dialog.open) return;
+  const my = ++gen;
+  const stale = () => my !== gen;
+  let cleanup = null; // wird nach dem Aufbau der Szene gesetzt
   dialog.showModal();
   document.documentElement.classList.add('cad-open');
   dialog.dataset.ready = '';
+  v.hint.textContent = isTouch() ? HINT_TOUCH : HINT_MOUSE;
   status.textContent = 'Lade 3D-Viewer …';
   status.className = 'cad-status';
+  // einziger Close-Handler (Esc, X, close()), sofort registriert: ungueltig machen + aufraeumen
+  dialog.addEventListener('close', () => {
+    gen++;
+    document.documentElement.classList.remove('cad-open');
+    dialog.dataset.ready = '';
+    if (cleanup) cleanup();
+  }, { once: true });
 
   let lib;
   try {
     lib = await loadThree();
   } catch (e) {
-    return fail('3D-Viewer konnte nicht geladen werden.');
+    if (!stale()) fail('3D-Viewer konnte nicht geladen werden.');
+    return;
   }
-  if (!dialog.open) return;
+  if (stale()) return;
   const { THREE, OrbitControls, GLTFLoader, RoomEnvironment } = lib;
 
   let renderer;
   try {
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
   } catch (e) {
-    return fail('WebGL ist in diesem Browser nicht verfügbar – die 3D-Ansicht kann nicht angezeigt werden.');
+    fail('WebGL ist in diesem Browser nicht verfügbar – die 3D-Ansicht kann nicht angezeigt werden.');
+    return;
   }
+  renderer.domElement.setAttribute('aria-label', '3D-Ansicht des Gehäuses, mit der Maus oder per Touch drehbar');
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   stage.append(renderer.domElement);
 
@@ -151,14 +164,15 @@ async function open(initial) {
   ro.observe(stage);
   resize();
 
-  function fit(obj) {
+  function fit(obj, id) {
     const box = new THREE.Box3().setFromObject(obj);
     const sphere = box.getBoundingSphere(new THREE.Sphere());
     const vfov = THREE.MathUtils.degToRad(camera.fov);
     const hfov = 2 * Math.atan(Math.tan(vfov / 2) * camera.aspect);
     const dist = (sphere.radius / Math.sin(Math.min(vfov, hfov) / 2)) * 1.05;
     // Vorderseite (+Z) zum Betrachter, leicht von rechts oben
-    const dir = new THREE.Vector3(0.45, 0.38, 1).normalize();
+    // Explosionsansicht: seitlich schraeg, damit alle Teile (auch hinten) sichtbar sind
+    const dir = (id === 'assembly_exploded' ? new THREE.Vector3(1.5, 0.45, 0.55) : new THREE.Vector3(0.45, 0.38, 1)).normalize();
     camera.position.copy(sphere.center).addScaledVector(dir, dist);
     camera.near = dist / 100;
     camera.far = dist * 20;
@@ -174,17 +188,17 @@ async function open(initial) {
   async function show(id) {
     const my = ++token;
     current = id;
-    buttons.forEach((b) => b.setAttribute('aria-selected', String(b.dataset.model === id)));
+    buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.model === id)));
     dialog.dataset.ready = '';
     status.className = 'cad-status';
     status.textContent = 'Modell wird geladen …';
     if (model) { scene.remove(model); disposeObject(model); model = null; }
     try {
       const gltf = await loader.loadAsync(`${BASE}${id}.glb`);
-      if (my !== token || disposed) { disposeObject(gltf.scene); return; }
+      if (my !== token || disposed || stale()) { disposeObject(gltf.scene); return; }
       model = gltf.scene;
       scene.add(model);
-      fit(model);
+      fit(model, id);
       status.textContent = '';
       status.className = 'cad-status';
       renderer.render(scene, camera);
@@ -210,13 +224,12 @@ async function open(initial) {
   }
   loop();
 
-  function teardown() {
+  cleanup = function teardown() {
     disposed = true;
     cancelAnimationFrame(raf);
     ro.disconnect();
     mq.removeEventListener('change', applyTheme);
     v.tabs.removeEventListener('click', onTab);
-    dialog.removeEventListener('close', teardown);
     controls.dispose();
     if (model) disposeObject(model);
     envTex.dispose();
@@ -224,17 +237,13 @@ async function open(initial) {
     renderer.dispose();
     renderer.forceContextLoss();
     renderer.domElement.remove();
-    document.documentElement.classList.remove('cad-open');
-    dialog.dataset.ready = '';
-  }
-  dialog.addEventListener('close', teardown);
+  };
 
   show(initial);
 
   function fail(msg) {
     status.textContent = msg;
     status.className = 'cad-status cad-error';
-    dialog.addEventListener('close', () => document.documentElement.classList.remove('cad-open'), { once: true });
   }
 }
 

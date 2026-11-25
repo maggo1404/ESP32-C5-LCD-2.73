@@ -43,7 +43,7 @@ try {
   await page.goto(url);
   await page.evaluate(() => { document.getElementById('cad-open').hidden = false; });
   await page.click('#cad-open');
-  await page.addStyleTag({ content: '.cad-ui{visibility:hidden!important}.cad-stage{inset:0!important}' });
+  await page.addStyleTag({ content: '.cad-bar,.cad-close{display:none!important}' });
   await page.waitForTimeout(200);
   for (const m of models) {
     await page.waitForSelector('.cad-dialog[open]');

@@ -638,10 +638,15 @@ def main():
     with open(os.path.join(OUT, "check_report.txt"), "w") as f:
         f.write("\n".join(rep) + "\n")
     try:   # optional: GLB fuer den Web-3D-Viewer (braucht cascadio, trimesh)
-        import step_to_glb
-        step_to_glb.main()
+        import cascadio, trimesh  # noqa: F401
     except ImportError:
         print("cascadio/trimesh fehlt -> GLB uebersprungen (siehe step_to_glb.py)")
+    else:
+        try:
+            import step_to_glb
+            step_to_glb.main()
+        except Exception as exc:   # GLB-Export darf Pruefergebnis/Exit-Code nicht beeinflussen
+            print(f"WARNUNG: GLB-Export fehlgeschlagen: {exc}")
     return 0 if ok else 1
 
 if __name__ == "__main__":

@@ -24,19 +24,17 @@ summary{cursor:pointer;font-weight:600}
 .cad-dialog::backdrop{background:rgba(0,0,0,.6)}
 @media (prefers-color-scheme:dark){.cad-dialog{background:#141920;color:#e7eaee}}
 html.cad-open{overflow:hidden}
-.cad-dialog{--cad-bar:8.6rem}
-.cad-stage{position:absolute;inset:0 0 var(--cad-bar) 0;touch-action:none}
-.cad-stage canvas{display:block;outline:0}
-.cad-ui{position:absolute;inset:0;pointer-events:none;display:flex;flex-direction:column;justify-content:flex-end}
-.cad-ui>*{pointer-events:auto}
+.cad-dialog[open]{display:flex;flex-direction:column}
+.cad-stage{flex:1 1 0;min-height:0;position:relative;touch-action:none}
+.cad-stage canvas{display:block;outline:0;position:absolute;inset:0}
 .cad-close{position:absolute;top:12px;right:12px;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--fg);font:28px/1 system-ui,sans-serif;cursor:pointer}
 .cad-status{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);max-width:min(90vw,28rem);text-align:center;background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:.6rem 1rem;pointer-events:none}
 .cad-status:empty{display:none}
 .cad-error{background:var(--warn);border-color:var(--warn-line)}
-.cad-bar{display:flex;flex-direction:column;gap:6px;padding:8px 12px 12px;background:linear-gradient(transparent,color-mix(in srgb,var(--bg) 85%,transparent) 40%)}
+.cad-bar{flex:none;display:flex;flex-direction:column;gap:6px;padding:8px 12px 12px;background:color-mix(in srgb,var(--bg) 92%,transparent)}
 .cad-tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:thin}
 .cad-tab{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:5.5rem;padding:4px 6px;font:inherit;font-size:.85rem;background:var(--card);color:var(--fg);border:2px solid var(--line);border-radius:8px;cursor:pointer}
 .cad-tab img{width:80px;height:60px;object-fit:cover;border-radius:4px;background:var(--bg)}
-.cad-tab[aria-selected=true]{border-color:var(--accent)}
+.cad-tab[aria-pressed=true]{border-color:var(--accent)}
 .cad-hint{text-align:center;color:var(--muted);font-size:.8rem}
-@media (max-width:30rem){.cad-dialog{--cad-bar:7.6rem}.cad-tab img{width:60px;height:45px}.cad-tab{min-width:4.5rem;font-size:.75rem}}
+@media (max-width:30rem){.cad-tab img{width:60px;height:45px}.cad-tab{min-width:4.5rem;font-size:.75rem}}
