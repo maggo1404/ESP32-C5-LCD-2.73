@@ -162,7 +162,7 @@ Akkubetrieb direkt versorgen (Q1/Q2 schalten bei 3,0 V durch, der 3,3-V-Buck lä
 | **LiFePO4-Zelle 14500 (AA-Format) mit PCM**, ca. 600 mAh | Ø14,0–14,2 × 49,7–50,5 mm blank, mit PCM/Knopfpol bis ca. 53 mm. Das Fach nimmt bis **Ø14,5 × 53,5 mm** auf. |
 | **AA-Haltekontakte** (Plus: Blech, Minus: Blech + Feder) oder Einzelkontakte | Blech ca. 10 × 10 × 0,5 mm in den Taschen, Feder ca. 6 mm frei (Block 2 mm), Ø ≤ 9 mm. Aus einem ausgeschlachteten AA-Halter. |
 | **Lademodul** TP5000 *(auf LiFePO4 / 3,6 V gestellt)* oder CN3058E-Modul | Gehäuse ist für ca. **26 × 17 × 4 mm** ausgelegt (**Annahme, nachmessen**, Parameter `CHARGER_L/W/H`). Eingang 5 V (Klemme/Pads), Ausgang BAT+/BAT−, Lade-LED. |
-| **Mini-Schiebeschalter** (z. B. SS12D00, Gehäuse ca. 8,5 × 3,5 mm) | in der IN+-Leitung des Moduls = **Lade-Aus-Schalter**; Fenster in der linken Seitenwand (`CHARGE_SWITCH`, `SW_*`). Optional, aber empfohlen. |
+| **Mini-Schiebeschalter** (z. B. SS12D00 mit **langem Hebel ≥ 6 mm**, Gehäuse ca. 8,5 × 3,5 mm – die Wand ist 4,2 mm dick, ein kurzer Hebel erreicht die Außenseite nicht) | in der IN+-Leitung des Moduls = **Lade-Aus-Schalter**; Fenster in der linken Seitenwand (`CHARGE_SWITCH`, `SW_*`). Optional, aber empfohlen. |
 | 2× M2x6 Senkkopfschrauben | Deckel des Modul-/Kabelraums (selbstschneidend, Pilotloch Ø1,8) |
 | Litze 0,25–0,35 mm², Schrumpfschlauch, **JST-1.25-Stecker** mit 2 Adern | Kabel vom Kabelraum zum BAT-Stecker **J1** am Board (Stecker passend zu J1 besorgen) |
 | Schaumstoff 1 mm | zwischen Zelle und Akkudeckel (zusätzlich zum Dichtband) |
@@ -184,8 +184,10 @@ IN− und BAT− im stromlosen Zustand). Daraus folgt:
 
 * **Empfohlen (Modul mit gemeinsamer Masse):** IN+ von **USB_5V vor D1** (über den Ladeschalter), **IN−/BAT− = Zellen-Minus = J1 Pin 2**.
   Der Eingangsstrom des Moduls (= Ladestrom) fließt über J1 Pin 2 durch **Q1** (AO3400, Rds-on ≈ 30–50 mΩ) nach Board-GND zurück.
-  Dadurch bleibt Q1 im Pfad: bei **verpolter Zelle** sperrt Q1 (Gate an BAT+), das Modul hat keinen Rückweg → kein Strom, der
-  Verpolschutz des Boards bleibt wirksam. Der Spannungsabfall an Q1 (≈ 15 mV bei 300 mA) ist vernachlässigbar. **Nicht**
+  Dadurch bleibt Q1 im Pfad: bei **verpolter Zelle** sperrt Q1 (Gate an BAT+), das Modul hat keinen Rückweg vom USB → kein
+  Ladestrom, und **das Board** ist geschützt. **Die Zelle selbst ist dann aber nicht geschützt:** sie liegt verpolt direkt am
+  BAT+/BAT−-Ausgang des Moduls und wird über dessen interne Dioden kurzgeschlossen – nur die Schutzschaltung (PCM) der Zelle
+  begrenzt das (siehe unten „Was nicht geschützt ist“). Deshalb nur Zellen **mit PCM** und auf die Polaritätsmarken achten. Der Spannungsabfall an Q1 (≈ 15 mV bei 300 mA) ist vernachlässigbar. **Nicht**
   zusätzlich IN− an Board-GND anlöten: das würde Q1 überbrücken (Verpolschutz weg, Rückstrom des Boards über die Modulmasse).
 * Nur bei einem Modul mit **galvanisch getrenntem** IN−/BAT− (selten) gilt: IN− an Board-GND, BAT− an Zellen-Minus; dann ist Q1 für den Ladepfad
   ohne Wirkung. Im Zweifel messen (Durchgang) und die Variante oben wählen.

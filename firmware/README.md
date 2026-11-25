@@ -211,7 +211,7 @@ allein startet nicht neu). USB-Betrieb und Ladezustand sind nicht auslesbar.
 der Zelle, und die berechnete Spannung `raw*3,3/4095*3` bleibt bei etwa 3,36 V hängen, egal wie leer
 die Zelle ist. Folge: Die LiFePO4-Schwellen (3,15 / 3,10 / 3,05 V) und die LiPo-Abschaltung (3,35 V)
 sind ohne Hardwareänderung **nicht erreichbar**, die Prozentanzeige bliebe bei LiFePO4 bei ca. 90 %.
-Darum zeigt die UI im Bereich 3,33 bis 3,40 V statt der Prozentzahl nur `<=3,4 V` bzw. `<=3.35 V
+Darum zeigt die UI im Bereich 3,33 bis 3,45 V statt der Prozentzahl nur `<=3,4 V` bzw. `<=3.35 V
 (Messung ungenau)`. Mögliche Hardwarelösung: den VBAT-Teiler (R21/R25-Mittelpunkt) zusätzlich auf einen
 freien ADC-Pin des ESP32-C5 führen (ADC-Referenz intern, unabhängig von VCC3V3), dann ist eine
 Messung bis 3,0 V möglich. Bis dahin bleibt die Auto-Abschaltung aus; Abschaltschutz sollte die

@@ -42,7 +42,7 @@ float battery_shutdown_volts(int type);
  * this band cannot be told apart (full LiFePO4 .. empty LiPo): the UI flags
  * them and the guard cannot see a low cell. See README (Akku-ADC). */
 #define BATTERY_AMBIGUOUS_MIN_V 3.33f
-#define BATTERY_AMBIGUOUS_MAX_V 3.40f
+#define BATTERY_AMBIGUOUS_MAX_V 3.45f /* reading in dropout can exceed 3.40 V under load */
 bool battery_reading_ambiguous(float volts);
 
 /* The low-voltage guard shuts down only if the voltage stayed below the
