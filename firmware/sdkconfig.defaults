@@ -39,11 +39,23 @@ CONFIG_ESP_WIFI_EXTRA_IRAM_OPT=n
 CONFIG_ESP_WIFI_SLP_IRAM_OPT=n
 CONFIG_ESP_WIFI_RX_IRAM_OPT=y
 
-# --- console / log on UART0 (GPIO11 TX, GPIO12 RX), NOT on USB-Serial-JTAG,
-# --- because the USB port carries the binary SLIP stream -----------------
+# --- console / log / panic ----------------------------------------------
+# Primary console: UART0 (GPIO11 TX, GPIO12 RX). Secondary: USB-Serial-JTAG
+# (output only, non-blocking, drops when no host listens), so that logs and
+# *panic dumps* are readable over the USB-C port (ESP Web Tools / browser
+# console) without a USB-UART adapter. ROM/early boot output goes to both
+# anyway. While the binary SLIP output on the same port is enabled
+# (settings usb_out), main.c reroutes runtime logs to UART0 only so the SLIP
+# stream stays clean (see log_vprintf in main.c). Panic dumps still go to USB.
 CONFIG_ESP_CONSOLE_UART_DEFAULT=y
 CONFIG_ESP_CONSOLE_UART_BAUDRATE=115200
-CONFIG_ESP_CONSOLE_SECONDARY_NONE=y
+CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG=y
+
+# Panic: print registers + backtrace, then reboot (also the default; explicit so
+# it is not changed by accident). EH_FRAME makes the firmware print the
+# backtrace itself (works with any serial terminal, bigger flash image).
+CONFIG_ESP_SYSTEM_PANIC_PRINT_REBOOT=y
+CONFIG_ESP_SYSTEM_USE_EH_FRAME=y
 
 # --- FAT on SD card: long file names for its_0001.pcap ------------------
 CONFIG_FATFS_LFN_HEAP=y

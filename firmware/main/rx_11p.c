@@ -163,24 +163,39 @@ esp_err_t rx_start(uint16_t channel_mhz)
         return ESP_ERR_NO_MEM;
     }
 
-    /* Same bring-up as the OpenTrafficMap / simple-its receivers. */
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
+    /* Same bring-up as the OpenTrafficMap / simple-its receivers. Every step
+     * is logged, and an error is returned instead of abort()ing (the abort
+     * text would only show on UART0): the caller keeps the UI running. */
+#define RX_STEP(call)                                                  \
+    do {                                                               \
+        esp_err_t e_ = (call);                                         \
+        if (e_ != ESP_OK) {                                            \
+            ESP_LOGE(TAG, "%s -> %s", #call, esp_err_to_name(e_));     \
+            return e_;                                                 \
+        }                                                              \
+        ESP_LOGI(TAG, "ok: %s", #call);                                \
+    } while (0)
+
+    RX_STEP(esp_event_loop_create_default());
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
-    ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_NULL));
+    RX_STEP(esp_wifi_init(&cfg));
+    RX_STEP(esp_wifi_set_storage(WIFI_STORAGE_RAM));
+    RX_STEP(esp_wifi_set_mode(WIFI_MODE_NULL));
 
     wifi_promiscuous_filter_t filter = {
         .filter_mask = WIFI_PROMIS_FILTER_MASK_ALL & ~WIFI_PROMIS_FILTER_MASK_FCSFAIL,
     };
-    ESP_ERROR_CHECK(esp_wifi_set_promiscuous_filter(&filter));
-    ESP_ERROR_CHECK(esp_wifi_set_promiscuous_rx_cb(rx_cb));
-    ESP_ERROR_CHECK(esp_wifi_set_promiscuous(true));
+    RX_STEP(esp_wifi_set_promiscuous_filter(&filter));
+    RX_STEP(esp_wifi_set_promiscuous_rx_cb(rx_cb));
+    RX_STEP(esp_wifi_set_promiscuous(true));
+    ESP_LOGI(TAG, "phy_11p_set(1, 0)");
     phy_11p_set(1, 0);
     /* a channel close to 5.9 GHz so the radio is in the right band ... */
-    ESP_ERROR_CHECK(esp_wifi_set_channel(140, WIFI_SECOND_CHAN_NONE));
+    RX_STEP(esp_wifi_set_channel(140, WIFI_SECOND_CHAN_NONE));
     /* ... then tune to the real centre frequency */
+    ESP_LOGI(TAG, "phy_change_channel(%u)", channel_mhz);
     phy_change_channel(channel_mhz, 1, 0, 0);
     ESP_LOGI(TAG, "802.11p Empfang aktiv, %u MHz", channel_mhz);
+#undef RX_STEP
     return ESP_OK;
 }

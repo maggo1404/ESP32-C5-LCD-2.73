@@ -16,7 +16,7 @@ SD-Karte mitgeschrieben.
 | `components/esp_lcd_ili9488/` | ILI9488-Treiber (MIT, aus dem Waveshare-Demo, lokal angepasst, siehe dortige README) |
 | `components/io_extension/` | Treiber für den CH32V003-IO-Expander (Reset, Backlight-PWM, Akku-ADC), aus dem Waveshare-Demo (Apache-2.0-Paket, Lizenztext liegt bei) |
 | `partitions.csv` | 32 MB Flash: NVS, PHY-Init, Factory-App 6 MB (ab 0x10000) |
-| `sdkconfig.defaults` | Ziel `esp32c5`, PSRAM, Konsole auf UART0, LVGL-Optionen |
+| `sdkconfig.defaults` | Ziel `esp32c5`, PSRAM, Konsole UART0 (+ USB sekundär), LVGL-Optionen |
 
 ## Bauen
 
@@ -87,13 +87,20 @@ ersten Start automatisch angelegt.
 
 ## Ausgaben
 
-### Logs (UART0)
+### Logs (UART0 + USB als zweite Konsole)
 
-Konsole und `ESP_LOG` laufen **nicht** über USB, sondern über UART0:
-**TX = GPIO11, RX = GPIO12, 115200 Baud, 8N1** (Stiftleiste „UART“ unten links, 3,3 V-Pegel).
-Grund: Über USB-Serial-JTAG läuft der binäre SLIP-Datenstrom. Die frühen
-ROM-Bootmeldungen können zusätzlich auf USB erscheinen; SLIP-Parser verwerfen
-solche Bytes.
+Primäre Konsole und `ESP_LOG`: UART0, **TX = GPIO11, RX = GPIO12, 115200 Baud, 8N1**
+(Stiftleiste „UART“ unten links, 3,3 V-Pegel). Zusätzlich ist USB-Serial-JTAG als
+*sekundäre* Konsole (nur Ausgabe, nicht blockierend) aktiv: Logs und Panic-Dumps
+(Register, Backtrace) sind damit auch über den USB-C-Port lesbar (z. B. Konsole in
+ESP Web Tools), ohne USB-UART-Adapter. Solange „USB-Ausgabe“ (SLIP) an ist, werden
+Laufzeit-Logs nur noch auf UART0 ausgegeben, damit der SLIP-Strom sauber bleibt
+(`log_vprintf` in `main.c`); ROM-Bootmeldungen und Panic-Dumps lassen sich nicht
+umleiten, SLIP-Parser verwerfen solche Bytes.
+
+Beim Start meldet die Firmware den letzten Reset-Grund und `[boot ...]`-Schritte
+(Heap-Stand); danach eine Minute lang alle 2 s Heap und Stack-Reserven der Tasks.
+Letzte `[boot]`-Zeile = bis dahin lief der Start.
 
 ### USB-Rohausgabe (SLIP)
 

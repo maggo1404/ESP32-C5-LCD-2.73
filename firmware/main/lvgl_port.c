@@ -45,6 +45,7 @@ static void tick_cb(void *arg)
 static void lvgl_task(void *arg)
 {
     (void)arg;
+    ESP_LOGI(TAG, "lvgl task: lv_init");
     lv_init();
 
     /* The panel driver swaps and converts RGB565 itself (LV_COLOR_16_SWAP=1).
@@ -58,6 +59,7 @@ static void lvgl_task(void *arg)
         vTaskDelete(NULL);
         return;
     }
+    ESP_LOGI(TAG, "lvgl task: draw buffers ok");
     lv_disp_draw_buf_init(&s_draw_buf, b1, b2, px);
 
     lv_disp_drv_init(&s_disp_drv);
@@ -76,7 +78,9 @@ static void lvgl_task(void *arg)
     ESP_ERROR_CHECK(esp_timer_start_periodic(t, 2000));
 
     if (s_ui_init) {
+        ESP_LOGI(TAG, "lvgl task: ui_init");
         s_ui_init();
+        ESP_LOGI(TAG, "lvgl task: ui_init done, stack min free %u", (unsigned)uxTaskGetStackHighWaterMark(NULL));
     }
 
     for (;;) {
