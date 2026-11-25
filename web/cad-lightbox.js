@@ -1,7 +1,7 @@
 // 3D-Viewer fuer das Gehaeuse: Lightbox mit three.js (lokal unter vendor/three, Importmap in index.html).
 // three.js wird erst beim Klick auf "3D ansehen" per dynamischem import() geladen.
 
-// Zwei Gehaeuse-Varianten (enclosure/export/<variante>/glb -> gehaeuse/3d/<variante>/): LiPo 503450 und LiFePO4 14500.
+// Drei Gehaeuse-Varianten (enclosure/export/<variante>/glb -> gehaeuse/3d/<variante>/): LiPo 503450, LiFePO4 14500 und nur USB-C (ohne Akku).
 const COMMON = [
   { id: 'assembly', label: 'Baugruppe' },
   { id: 'body', label: 'Gehäuse' },
@@ -14,6 +14,9 @@ const VARIANTS = [
   { id: 'lifepo4', label: 'LiFePO4 14500',
     models: [...COMMON, { id: 'charger_lid', label: 'Modul-Deckel' }, { id: 'vent_clip', label: 'Lüftungs-Clip' },
              { id: 'assembly_exploded', label: 'Explosionsansicht' }] },
+  { id: 'usb', label: 'Nur USB',
+    models: [{ id: 'assembly', label: 'Baugruppe' }, { id: 'body', label: 'Gehäuse' }, { id: 'front_bezel', label: 'Frontrahmen' },
+             { id: 'vent_clip', label: 'Lüftungs-Clip' }, { id: 'assembly_exploded', label: 'Explosionsansicht' }] },
 ];
 let variant = VARIANTS[0];
 const base = () => `gehaeuse/3d/${variant.id}/`;

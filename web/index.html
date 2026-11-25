@@ -66,16 +66,19 @@ ein pcap-Log auf der SD-Karte.</p>
 
 <section>
 <h2>Gehäuse</h2>
-<p>3D-druckbares Handgerät-Gehäuse mit herausnehmbarem Akku und Lüftungsgitter-Clip (PETG oder ASA empfohlen, besonders fürs Auto).
-Es gibt zwei Varianten:</p>
+<p>3D-druckbares Handgerät-Gehäuse mit herausnehmbarem Akku (oder ganz ohne Akku) und Lüftungsgitter-Clip (PETG oder ASA empfohlen, besonders fürs Auto).
+Es gibt drei Varianten:</p>
 <ul>
 <li><strong>LiPo 503450</strong> (22,3 mm dick) – Akku wird über den Lader auf dem Board geladen.</li>
 <li><strong>LiFePO4 14500</strong> (31,7 mm dick) – hitzefester Akku im AA-Format mit internem Lademodul (3,6 V).
 <strong>Achtung:</strong> Diese Variante verlangt eine Änderung am Board (Onboard-Lader abschalten, Bauteil L1 entfernen) und ist
 <em>nicht</em> am unveränderten Board mit USB zu betreiben – siehe
 <a href="https://github.com/maggo1404/ESP32-C5-LCD-2.73/blob/main/enclosure/README.md#lifepo4-variante">Anleitung und Sicherheitshinweise</a>.</li>
+<li><strong>Nur USB-C</strong> (16,1 mm dick) – ohne Akku, Betrieb über ein USB-C-Kabel (Powerbank, Auto-Ladegerät); geschlossene Rückseite,
+kein Akkufach, J1 bleibt unbestückt – siehe
+<a href="https://github.com/maggo1404/ESP32-C5-LCD-2.73/blob/main/enclosure/README.md#variante-ohne-akku-nur-usb-c">Anleitung</a>.</li>
 </ul>
-<p class="cad-launch"><button type="button" class="fallback" data-cad-open="assembly" data-cad-variant="lipo" id="cad-open" hidden>3D ansehen: LiPo</button><button type="button" class="fallback" data-cad-open="assembly" data-cad-variant="lifepo4" id="cad-open-lfp" hidden>3D ansehen: LiFePO4</button></p>
+<p class="cad-launch"><button type="button" class="fallback" data-cad-open="assembly" data-cad-variant="lipo" id="cad-open" hidden>3D ansehen: LiPo</button><button type="button" class="fallback" data-cad-open="assembly" data-cad-variant="lifepo4" id="cad-open-lfp" hidden>3D ansehen: LiFePO4</button><button type="button" class="fallback" data-cad-open="assembly" data-cad-variant="usb" id="cad-open-usb" hidden>3D ansehen: Nur USB</button></p>
 <div id="enclosure"><p>Dateien werden geladen …</p></div>
 </section>
 
@@ -89,7 +92,7 @@ Es gibt zwei Varianten:</p>
   fetch('manifest.json').then(function(r){return r.json()}).then(function(m){
     var v=document.getElementById('version'); v.textContent='Firmware-Version: '+m.version; v.hidden=false;
   }).catch(function(){});
-  [['cad-open','lipo'],['cad-open-lfp','lifepo4']].forEach(function(p){
+  [['cad-open','lipo'],['cad-open-lfp','lifepo4'],['cad-open-usb','usb']].forEach(function(p){
     var cb=document.getElementById(p[0]);
     fetch('gehaeuse/3d/'+p[1]+'/assembly.glb',{method:'HEAD'}).then(function(r){if(r.ok)cb.hidden=false}).catch(function(){});
   });
@@ -97,7 +100,7 @@ Es gibt zwei Varianten:</p>
   fetch('gehaeuse/files.json').then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(files){
     if(!files.length)throw 0;
     box.textContent='';
-    [['lipo_','LiPo 503450'],['lifepo4_','LiFePO4 14500 (mit Lademodul-Deckel)']].forEach(function(g){
+    [['lipo_','LiPo 503450'],['lifepo4_','LiFePO4 14500 (mit Lademodul-Deckel)'],['usb_','Nur USB-C (ohne Akku)']].forEach(function(g){
       var sel=files.filter(function(f){return f.indexOf(g[0])===0});
       if(!sel.length)return;
       var h=document.createElement('h3'),ul=document.createElement('ul');

@@ -1,0 +1,68 @@
+== Variante: Nur USB-C (ohne Akku) (none) -> export/usb/ ==
+== Parameter/Stack ==
+Aussenmass Koerper/Rahmen: 78.0 x 78.0 mm, Gesamtdicke ohne Clip: 16.10 mm (mit Clip +18.2, gesamt 34.3 mm)
+Z: Fach 0..2.40, Boden bis 3.90, Platine 8.20..9.80, LCD bis 13.80, Koerper-Oberkante 14.30, Rahmen bis 16.10
+Schraube: M2 Senkkopf in den Ecken, Rahmen 1.8 + Bohrung 8.0 -> M2x8 (selbstschneidend)
+Schrauben-Mitte +-35.8, Abstand Bohrungsrand zur Platinentasche: 2.59 mm
+== Gueltigkeit ==
+body          valid=True solids=1 vol=  33674.2 mm3 bbox=(78.0 x 78.0 x 14.3)
+front_bezel   valid=True solids=1 vol=   6127.2 mm3 bbox=(78.0 x 78.0 x 1.8)
+vent_clip     valid=True solids=1 vol=   2536.8 mm3 bbox=(12.0 x 28.0 x 21.4)
+board_dummy   valid=True solids=1 vol=  43769.8 mm3 bbox=(68.0 x 68.8 x 9.6)
+== Durchdringung (Baugruppe) ==
+body          x front_bezel      0.000 mm3 OK
+body          x vent_clip        0.000 mm3 OK
+body          x board_dummy      0.000 mm3 OK
+front_bezel   x vent_clip        0.000 mm3 OK
+front_bezel   x board_dummy      0.000 mm3 OK
+vent_clip     x board_dummy      0.000 mm3 OK
+== Druckplatte ==
+body          x    6.0..  84.0 y    6.0..  84.0 z 0..14.3
+front_bezel   x   91.0.. 169.0 y    6.0..  84.0 z 0..1.8
+vent_clip     x  119.3.. 140.7 y  106.0.. 134.0 z 0..12.0
+== Funktions-Probes ==
+Nut Querformat frei von linker Aussenkante bis Anschlag                OK
+Nut Querformat endet am Anschlag (Wand dahinter)                       OK
+Nut Hochformat frei von oberer Aussenkante bis Anschlag                OK
+== Ohne Akku (nur USB-C): geschlossene Rueckseite ==
+Kein Akkudeckel / keine Akku-Teile in der Baugruppe                    OK
+Gesamtdicke 16.1 mm <= 16,5 (LiPo: 22,3)                               OK
+Rueckseite geschlossen (z=0,3): 236 offene Rasterpunkte nur in Nuten/Antennenzone OK
+BAT-Stecker J1 (X -22,6, Y -17) ueberdeckt: Boden massiv, kein Kabelschlitz OK
+Material ueber den Nuten 1.10 mm >= 1,0                                OK
+Material ueber der Rastmulde 0.40 mm >= 0,3                            OK
+Nuten reichen in die Aussenwand (Oeffnung am Rand, Tiefe bis z=DT_DEPTH) OK
+Standoff-Fuss im Boden verankert (Boden 3.9 mm)                        OK
+Boden hinter dem USB-C-Fenster geschlossen (z < Fensterunterkante)     OK
+Clip-Haltesicherheit gegen Rutschen 4.3 >= 3                           OK
+Clip-Haltesicherheit gegen Kippen 3.7 >= 2                             OK
+TF-Fenster frei bei X=8.8                                              OK
+TF-Fenster frei bei X=15.3                                             OK
+TF-Fenster frei bei X=21.8                                             OK
+TF-Fingermulde aussen frei                                             OK
+TF-Fenster ca. 15.3 mm, Wand daneben geschlossen                       OK
+Rastmulde im Koerper vorhanden                                         OK
+Rastnase am Clip vorhanden                                             OK
+Maximale freie Spannweite Hohlraum y=30: 19 mm <= 20                   OK
+Maximale freie Spannweite Hohlraum y=-8 (rechts): 0 mm <= 20           OK
+Maximale freie Spannweite Hohlraum x=-33: 10 mm <= 20                  OK
+Antennenzone rueckseitig frei (nur Boden)                              OK
+Clip-Mitte ausserhalb der Antennenzone                                 OK
+Bruecken 2D (z=1.0): groesste Freispannweite (kuerzeste Richtung) 19 mm bei (0, 15) <= 20 OK
+Bruecken 2D (z=2.0): groesste Freispannweite (kuerzeste Richtung) 19 mm bei (0, 15) <= 20 OK
+== Platine / Rahmen / Anschluesse / Taster ==
+Platine liegt auf 4 Standoffs (Standoff-Oberseite = Platinenrueckseite) OK
+Zentrierzapfen in den 4 Platinenloechern, kuerzer als die Platine      OK
+Boden unter den Bauteilen: 0,3 mm Luft, Bauteilraum darueber frei      OK
+Platine + LCD (board_dummy) frei vom Koerper                           OK
+Dichtband-Spalt Glas <-> Rahmen 0.50 mm (= LCD_FRONT_GAP), Rahmen liegt auf dem Koerper OK
+4 Eckschrauben (+-35.8): Pilotloch im Koerper, Durchgang im Rahmen, Material daneben OK
+USB-C-Fenster 14 x 8 mm frei (9 Punkte)                                OK
+USB-C-Fenster: Wand darueber/darunter/daneben geschlossen              OK
+USB-C-Buchse (3,2 mm hoch) liegt im Fenster                            OK
+Seitentaster (2 je Seite): Biegezunge, Schlitze, Stoessel mit Spalt zur Platine OK
+Clip-Schaetzung (ANNAHMEN: PETG E=1200 MPa, mu=0.4, Masse 85 g, Hebel 18 mm): Klemmkraft je Zinke 4.5 N, Biegespannung 5.1 MPa, Sicherheit Rutschen 4.3 / Kippen 3.7
+RESULT: ALLE PRUEFUNGEN OK
+3MF body: geschlossen=True
+3MF front_bezel: geschlossen=True
+3MF vent_clip: geschlossen=True

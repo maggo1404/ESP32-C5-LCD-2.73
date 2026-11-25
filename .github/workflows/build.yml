@@ -51,7 +51,7 @@ jobs:
         run: |
           set -eu
           mkdir -p enclosure-release
-          for v in lipo lifepo4; do
+          for v in lipo lifepo4 usb; do
             for f in enclosure/export/$v/*.step enclosure/export/$v/*.stl enclosure/export/$v/*.3mf; do
               case "$(basename "$f")" in board_dummy.*|cell_dummy.*|charger_dummy.*) continue;; esac
               [ -e "$f" ] && cp "$f" "enclosure-release/${v}_$(basename "$f")" || true

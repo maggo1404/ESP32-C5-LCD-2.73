@@ -19,7 +19,7 @@ button.fallback{font:inherit;background:var(--accent);color:var(--accent-fg);bor
 footer{color:var(--muted);font-size:.9rem;text-align:center;margin-top:1.5rem}
 details{margin:.4rem 0}
 summary{cursor:pointer;font-weight:600}
-.cad-launch{margin:.6rem 0}
+.cad-launch{margin:.6rem 0;display:flex;flex-wrap:wrap;gap:.5rem}
 .cad-dialog{border:0;padding:0;margin:0;width:100vw;height:100vh;height:100dvh;max-width:none;max-height:none;background:#e9ecf0;color:#1b1f24;overflow:hidden}
 .cad-dialog::backdrop{background:rgba(0,0,0,.6)}
 @media (prefers-color-scheme:dark){.cad-dialog{background:#141920;color:#e7eaee}}
@@ -39,6 +39,5 @@ html.cad-open{overflow:hidden}
 .cad-variants{display:flex;gap:6px;justify-content:center}
 .cad-variant{font:inherit;font-size:.85rem;padding:.3rem .8rem;background:var(--card);color:var(--fg);border:2px solid var(--line);border-radius:999px;cursor:pointer}
 .cad-variant[aria-pressed=true]{border-color:var(--accent);font-weight:600}
-.cad-launch button+button{margin-left:.5rem}
 .cad-hint{text-align:center;color:var(--muted);font-size:.8rem}
 @media (max-width:30rem){.cad-tab img{width:60px;height:45px}.cad-tab{min-width:4.5rem;font-size:.75rem}}

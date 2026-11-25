@@ -2,9 +2,9 @@
 """STEP -> GLB fuer den 3D-Viewer der Web-Seite (web/cad-lightbox.js).
 
     pip install cascadio==0.0.17 trimesh numpy
-    python step_to_glb.py [lipo|lifepo4|all]   # export/<variante>/*.step -> export/<variante>/glb/*.glb
+    python step_to_glb.py [lipo|lifepo4|usb|all]   # export/<variante>/*.step -> export/<variante>/glb/*.glb
 
-Erzeugt assembly, body, front_bezel, battery_door, vent_clip (LiFePO4 zusaetzlich charger_lid) sowie
+Erzeugt assembly, body, front_bezel, battery_door (nicht bei usb), vent_clip (LiFePO4 zusaetzlich charger_lid) sowie
 assembly_exploded (Teile entlang Z auseinandergezogen).  Einheit im GLB: Meter
 (wie von cascadio geliefert), Achsen wie im Modell: +Z zeigt zum Betrachter
 (Vorderseite), +Y oben.  Farben werden hier pro Teil gesetzt (die Einzel-STEPs
@@ -18,7 +18,7 @@ import trimesh
 import cascadio
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VARIANTS = ["lipo", "lifepo4"]
+VARIANTS = ["lipo", "lifepo4", "usb"]
 
 TOL_LINEAR = 0.05   # mm
 TOL_ANGULAR = 0.3   # rad

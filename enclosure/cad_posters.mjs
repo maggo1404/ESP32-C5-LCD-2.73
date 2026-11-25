@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Erzeugt Vorschaubilder (Poster) fuer den 3D-Viewer: laedt web/ + export/<variante>/glb headless
 // (Playwright/Chromium, WebGL via SwiftShader) und speichert export/<variante>/glb/posters/<modell>.png.
-//   node cad_posters.mjs [lipo|lifepo4|all]   (benoetigt: npm i playwright && npx playwright install chromium)
+//   node cad_posters.mjs [lipo|lifepo4|usb|all]   (benoetigt: npm i playwright && npx playwright install chromium)
 import { createRequire } from 'node:module';
 import http from 'node:http';
 import fs from 'node:fs';
@@ -18,6 +18,7 @@ const arg = process.argv[2] || 'all';
 const variants = {
   lipo: ['assembly', 'body', 'front_bezel', 'battery_door', 'vent_clip', 'assembly_exploded'],
   lifepo4: ['assembly', 'body', 'front_bezel', 'battery_door', 'charger_lid', 'vent_clip', 'assembly_exploded'],
+  usb: ['assembly', 'body', 'front_bezel', 'vent_clip', 'assembly_exploded'],
 };
 const todo = arg === 'all' ? Object.keys(variants) : [arg];
 

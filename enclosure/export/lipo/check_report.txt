@@ -51,6 +51,17 @@ Maximale freie Spannweite Hohlraum x=-33: 12 mm <= 20                  OK
 Antennenzone rueckseitig frei (nur Boden)                              OK
 Clip-Mitte ausserhalb der Antennenzone                                 OK
 Bruecken 2D: groesste Freispannweite (kuerzeste Richtung) 17 mm bei (-6, -36) <= 20 OK
+== Platine / Rahmen / Anschluesse / Taster ==
+Platine liegt auf 4 Standoffs (Standoff-Oberseite = Platinenrueckseite) OK
+Zentrierzapfen in den 4 Platinenloechern, kuerzer als die Platine      OK
+Boden unter den Bauteilen: 0,3 mm Luft, Bauteilraum darueber frei      OK
+Platine + LCD (board_dummy) frei vom Koerper                           OK
+Dichtband-Spalt Glas <-> Rahmen 0.50 mm (= LCD_FRONT_GAP), Rahmen liegt auf dem Koerper OK
+4 Eckschrauben (+-35.8): Pilotloch im Koerper, Durchgang im Rahmen, Material daneben OK
+USB-C-Fenster 14 x 8 mm frei (9 Punkte)                                OK
+USB-C-Fenster: Wand darueber/darunter/daneben geschlossen              OK
+USB-C-Buchse (3,2 mm hoch) liegt im Fenster                            OK
+Seitentaster (2 je Seite): Biegezunge, Schlitze, Stoessel mit Spalt zur Platine OK
 Clip-Schaetzung (ANNAHMEN: PETG E=1200 MPa, mu=0.4, Masse 75 g, Hebel 21 mm): Klemmkraft je Zinke 4.5 N, Biegespannung 5.1 MPa, Sicherheit Rutschen 4.9 / Kippen 3.6
 RESULT: ALLE PRUEFUNGEN OK
 3MF body: geschlossen=True

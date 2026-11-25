@@ -1,11 +1,12 @@
 # Gehäuse für Waveshare ESP32-C5-LCD-2.73 (parametrisch, CadQuery)
 
-Handgerät mit **herausnehmbarem Akku** und **Lüftungsgitter-Clip** fürs Auto, in **zwei Varianten**:
+Handgerät mit **herausnehmbarem Akku** (oder ganz ohne Akku) und **Lüftungsgitter-Clip** fürs Auto, in **drei Varianten**:
 
 | Variante | Akku | Laden | Dicke | Ausgabe |
 |---|---|---|---|---|
 | **LiPo** (`lipo_503450`, Standard) | LiPo 503450, flach | Onboard-Lader des Boards (ETA6098) | 22,3 mm | `export/lipo/` |
 | **LiFePO4** (`lifepo4_14500`) | LiFePO4 14500 (AA-Format), hitzefest | **internes Lademodul (3,6 V)**, Onboard-Lader per Rework abgeschaltet | 31,7 mm | `export/lifepo4/` |
+| **Nur USB** (`none`) | **keiner** – Versorgung nur über USB-C | – (J1 bleibt leer) | **16,1 mm** | `export/usb/` |
 
 > **Achtung LiFePO4-Variante:** Sie funktioniert nur mit einem Eingriff am Board (Bauteil **L1** entfernen). **Niemals** eine
 > LiFePO4-Zelle an ein unverändertes Board mit USB-Kabel anschließen – der Onboard-Lader würde sie auf 4,2 V laden
@@ -17,7 +18,8 @@ Alles wird aus `enclosure.py` erzeugt:
 python -m venv venv && venv/bin/pip install cadquery trimesh numpy matplotlib
 venv/bin/python enclosure.py                          # LiPo        -> enclosure/export/lipo/
 venv/bin/python enclosure.py --battery lifepo4_14500  # LiFePO4     -> enclosure/export/lifepo4/
-venv/bin/python enclosure.py --all                    # beide nacheinander (je ein Prozess, ca. 6 min)
+venv/bin/python enclosure.py --battery none           # ohne Akku  -> enclosure/export/usb/
+venv/bin/python enclosure.py --all                    # alle drei nacheinander (je ein Prozess, ca. 8 min)
 # alternativ: ENC_BATTERY=lifepo4_14500 venv/bin/python enclosure.py
 ```
 
@@ -29,16 +31,16 @@ Alle Pfade unten beziehen sich auf `export/<variante>/` (früher flach in `expor
 ## 3D-Viewer (Web-Seite)
 
 Die Seite (`web/`) zeigt das Gehäuse per Button **„3D ansehen“** in einer Lightbox (three.js r170, lokal unter
-`web/vendor/three/`, wird erst beim Klick geladen) mit **Schalter LiPo / LiFePO4**. Die Modelle liegen als GLB in
-`export/<variante>/glb/` (`assembly`, `body`, `front_bezel`, `battery_door`, `vent_clip`, `assembly_exploded`, LiFePO4 zusätzlich
+`web/vendor/three/`, wird erst beim Klick geladen) mit **Schalter LiPo / LiFePO4 / Nur USB**. Die Modelle liegen als GLB in
+`export/<variante>/glb/` (`assembly`, `body`, `front_bezel`, `battery_door` (nicht bei „Nur USB“), `vent_clip`, `assembly_exploded`, LiFePO4 zusätzlich
 `charger_lid`) plus Vorschaubilder in `export/<variante>/glb/posters/`; `pages.yml` kopiert beides nach `gehaeuse/3d/<variante>/`
-und die Druckdateien (`3mf/step/stl`) mit Präfix (`lipo_body.stl`, `lifepo4_print_plate.3mf` …) nach `gehaeuse/` (Liste `files.json`).
+und die Druckdateien (`3mf/step/stl`) mit Präfix (`lipo_body.stl`, `lifepo4_print_plate.3mf`, `usb_body.stl` …) nach `gehaeuse/` (Liste `files.json`).
 `build.yml` hängt dieselben Dateien (ohne `*_dummy`) mit Präfix an das Release.
 
 ```bash
 venv/bin/pip install cascadio==0.0.17 trimesh numpy
-venv/bin/python step_to_glb.py [lipo|lifepo4|all]   # STEP -> GLB (Toleranz 0,05 mm / 0,3 rad); läuft auch am Ende von enclosure.py, wenn cascadio installiert ist
-node cad_posters.mjs [lipo|lifepo4|all]             # Poster-PNGs (npm i playwright; npx playwright install chromium)
+venv/bin/python step_to_glb.py [lipo|lifepo4|usb|all]   # STEP -> GLB (Toleranz 0,05 mm / 0,3 rad); läuft auch am Ende von enclosure.py, wenn cascadio installiert ist
+node cad_posters.mjs [lipo|lifepo4|usb|all]           # Poster-PNGs (npm i playwright; npx playwright install chromium)
 ```
 
 Farben setzt `step_to_glb.py` je Teil (Tabelle `COLORS`; `board_dummy` = dunkelgrüne Platine/Display, `cell_dummy` = Zelle, `charger_dummy` = Lademodul, sichtbar nur in der Baugruppe).
@@ -59,7 +61,7 @@ Nach Änderungen am Modell: `python enclosure.py --all`, dann ggf. `node cad_pos
 | `cell_dummy`, `charger_dummy` *(nur LiFePO4)* | nur `.step` (in `assembly.step`) | Referenzkörper Zelle 14500 und Lademodul, nicht drucken |
 
 `*.stl` sind in **Druckausrichtung**, `*.step` in **Einbaulage** (`assembly.step` = Baugruppe).
-`print_plate.3mf` enthält alle druckbaren Teile (LiPo 4, LiFePO4 5) fertig angeordnet. `preview_*.png` sind Vorschauen.
+`print_plate.3mf` enthält alle druckbaren Teile (LiPo 4, LiFePO4 5, Nur USB 3: Körper, Rahmen, Clip) fertig angeordnet. `preview_*.png` sind Vorschauen.
 
 **Koordinatenkonvention** (siehe Kopf von `enclosure.py`): Ursprung Platinenmitte, +X rechts, +Y oben
 **bei Blick auf die Vorderseite**, +Z zum Betrachter. Die Maßzeichnung zeigt die *Rückseite* (links/rechts
@@ -274,6 +276,49 @@ Opfer-Stege gibt es hier nicht (Fachdecke 16,4 mm Brücke mit 45°-Fasen). Fasen
 | Gemeinsame Masse IN−/BAT− des Moduls; Rückweg über Q1; Aufwecken tiefentladener Zellen | Durchgangsmessung am Modul, Tests oben |
 | Kontaktblech-Halt (Lippe/Schlitz) nicht umgesetzt | Bleche mit Klebstoff/Heißkleber oder Zelle selbst gehalten |
 | Entladung/Firmware (Spannungsanzeige, Abschaltschwelle ≈ 3,1 V) | siehe `firmware/` (separat) |
+
+## Variante ohne Akku (nur USB-C)
+
+Für den Dauerbetrieb an Powerbank, Auto-USB oder Netzteil. Es gibt **keinen Akku, kein Akkufach, keinen Akkudeckel, keine Opfer-Stege
+und keinen Kabelschlitz**; die Rückseite ist ein **geschlossener Boden** des Körpers. Ausgabe: `export/usb/`
+(`python enclosure.py --battery none`; Dateien im Web/Release mit Präfix `usb_`). Teile: Frontrahmen, Körper, Vent-Clip (3 Teile).
+
+### Teileliste
+
+| Teil | Hinweis |
+|---|---|
+| **Kein Akku** | Der Akku-Anschluss **J1** am Board bleibt **unbestückt (leer)** – empfohlen. Der Onboard-Lader (ETA6098) hat dann nichts zu laden – das ist unkritisch und braucht keinen Eingriff am Board (**nicht am Gerät verifiziert**; fällt am BAT-Anschluss ein Ladestatus/Fehler auf, den Lader wie in der LiFePO4-Variante per Entfernen von L1 abschalten). J1 ist durch den massiven Boden abgedeckt. |
+| USB-C-Kabel (Daten **und** Strom) | Fenster 14 × 8 mm für den Stecker-Overmold (`USB_PLUG_W/H`), auch für leicht abgewinkelte Stecker; Netzteil/Powerbank mit ≥ 5 V / 500 mA |
+| 4× M2×8 Senkkopfschrauben, ca. 250 mm Schaumstoff-Dichtband (0,8–1,0 mm) | wie bei den anderen Varianten |
+
+Kein Akku-Warnhinweis nötig – aber: ohne Akku bootet das Gerät erst, wenn USB 5 V liefert; bei kurzen Spannungseinbrüchen (Anlassen im Auto) startet es neu.
+
+### Konstruktion und Dicke
+
+* **Dicke 16,1 mm** (LiPo 22,3 / LiFePO4 31,7). Stapel von hinten: **Boden 3,9** (Rückseite massiv), Bauteilraum 4,3 (Bauteile 4,0 + 0,3 Luft),
+  Platine 1,6, LCD 4,0, 0,5 Luft (Dichtband), Frontrahmen 1,8. Mit Clip +18,2 mm nach hinten (gesamt 34,3 mm).
+* **Warum 3,9 mm Boden:** Die Schwalbenschwanz-Nuten für den Clip sind 2,8 mm tief (von hinten in den Boden gefräst); darüber müssen ≥ 1,0 mm Material
+  bleiben (1,1 mm), über der Rastmulde (Kugel Ø2, bis z = 3,5) ≥ 0,4 mm (0,4 mm). Ein dünnerer Boden wäre nur mit flacheren Nuten möglich
+  (Parameter `NOBAT_FLOOR`, `DT_DEPTH`). Der Boden ist **massiv** (kein Rippenraster, keine Brücken über Hohlräume); nur die Nuten
+  (Breite ≈ 9–11 mm) und die Antennen-Aussparung (nur 1,5 mm Boden über der PCB-Antenne, X −24…−4, Y 25,5…34) sind von hinten offen.
+* **Unverändert** gegenüber LiPo: Platinentasche mit 4 Standoffs und Zentrierzapfen, Dichtband-Spalt 0,5 mm, 4 Eckschrauben, USB-C-Fenster, TF-Slot mit
+  Fingermulde, Seitentaster-Biegezungen, Antennen-Freihaltung, Vent-Clip (Hoch- und Querformat, mit Rastmulde).
+* Gerätemasse für die Clip-Abschätzung ca. **85 g** (Sicherheit Rutschen ≈ 4,3, Kippen ≈ 3,7; Papierwert, im Auto testen).
+* Keine Lüftungsschlitze (optional, nicht umgesetzt). Eine Zugentlastung/Kabelbinder-Öse am USB-C-Fenster ist **nicht** umgesetzt (die Wand ist dort nur 4,7 mm dick;
+  stattdessen Stecker mit kurzem Overmold oder Kabel am Clip führen).
+
+### Druck (nur USB)
+
+PETG/ASA, 0,2 mm, 3–4 Perimeter, keine Stützen: **Körper** Rückseite nach unten (die Nuten sind nach unten offene Kanäle mit ≤ 11 mm Deckenbrücke, die Boden-Decke
+über den Nuten ist 1,1 mm dick – Brückeneinstellungen: langsam, viel Lüfter), **Rahmen** Vorderseite nach unten, **Clip** auf der Seite (100 % Infill).
+`export/usb/print_plate.3mf` enthält alle drei Teile (alle Brückenspannweiten ≤ 20 mm, im Check-Report geprüft).
+
+### Zusammenbau (nur USB)
+
+1. Platine+LCD von vorn in den Körper legen (USB-C unten, TF oben; Zapfen in die Platinenlöcher, sie liegt auf den 4 Standoffs). Kein Akku, kein Kabel am BAT-Stecker.
+2. Dichtband rundum auf die Glaskante kleben, Frontrahmen aufsetzen, 4× M2×8 Senkschrauben eindrehen (nicht überdrehen).
+3. Clip bei Bedarf einschieben (hoch/quer, rastet an der Rastmulde).
+4. USB-C-Kabel einstecken.
 
 ## Vent-Clip
 

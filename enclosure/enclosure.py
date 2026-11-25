@@ -3,10 +3,11 @@
 
     python enclosure.py                         # LiPo 503450 -> export/lipo/
     python enclosure.py --battery lifepo4_14500 # LiFePO4 14500 + Lademodul -> export/lifepo4/
-    python enclosure.py --all                   # beide Varianten nacheinander
-  (alternativ Umgebungsvariable ENC_BATTERY=lipo_503450|lifepo4_14500)
+    python enclosure.py --battery none          # ohne Akku, nur USB-C -> export/usb/
+    python enclosure.py --all                   # alle drei Varianten nacheinander
+  (alternativ Umgebungsvariable ENC_BATTERY=lipo_503450|lifepo4_14500|none)
 
-Je Variante entsteht in export/<lipo|lifepo4>/ :
+Je Variante entsteht in export/<lipo|lifepo4|usb>/ :
   <teil>.step (Einbaulage) / <teil>.stl (Druckausrichtung), assembly.step,
   print_plate.3mf, preview_*.png, check_report.txt, glb/ (3D-Viewer)
 
@@ -25,7 +26,8 @@ import cadquery as cq
 # lipo_503450    : LiPo 503450 flach (52 x 36 x 6), Akku wird ueber den Onboard-Lader (ETA6098) geladen.
 # lifepo4_14500  : LiFePO4 14500 (AA-Format) laengs im Fach + internes Lademodul (3,6 V), Onboard-Lader per
 #                  Entfernen von L1 DEAKTIVIEREN (siehe enclosure/README.md, Abschnitt LiFePO4-Variante)!
-BATTERY_ALIASES = {"lipo": "lipo_503450", "lifepo4": "lifepo4_14500"}
+# none           : KEIN Akku (nur USB-C): geschlossene Rueckseite, kein Akkufach/Deckel, ca. 16 mm dick -> export/usb/
+BATTERY_ALIASES = {"lipo": "lipo_503450", "lifepo4": "lifepo4_14500", "usb": "none", "nobat": "none"}
 
 def _select_battery(argv):
     sel = os.environ.get("ENC_BATTERY", "lipo_503450")
@@ -96,6 +98,9 @@ BATTERIES = {
     # 14500: O14,5 x 53,5 (max., mit Schutzschaltung) + Federkontakt; BAT_T = O14,5 + 0,9 (Schaumstoff/Spiel)
     "lifepo4_14500": dict(dir="lifepo4", label="LiFePO4 14500", BAT_L=54.0, BAT_W=16.4, BAT_T=15.4,
                           cyl=True, struts=False, charger=True, clip_plate_t=3.5, prong_t=2.8),
+    # ohne Akku: kein Fach, kein Deckel; Rueckseite = geschlossener Boden (BACK_T) ueber den Schwalbenschwanz-Nuten
+    "none": dict(dir="usb", label="Nur USB-C (ohne Akku)", BAT_L=0.0, BAT_W=0.0, BAT_T=0.0,
+                 cyl=False, struts=False, charger=False, clip_plate_t=3.0, prong_t=2.4, nobat=True),
 }
 if BATTERY_TYPE not in BATTERIES:
     sys.exit(f"Unbekannter Akkutyp {BATTERY_TYPE!r}; erlaubt: {', '.join(BATTERIES)}")
@@ -103,6 +108,7 @@ _B = BATTERIES[BATTERY_TYPE]
 BAT_L, BAT_W, BAT_T = _B["BAT_L"], _B["BAT_W"], _B["BAT_T"]
 CYL = _B["cyl"]                 # Rundzelle laengs in X (statt flachem Pouch)
 CHARGER = _B["charger"]         # internes Lademodul + Deckel
+NOBAT = bool(_B.get("nobat"))   # kein Akku: geschlossene Rueckseite (kein Fach, kein Akkudeckel)
 # --- Rundzelle 14500 (nur CYL) ---
 CELL_D_NOM, CELL_D_MAX = 14.2, 14.5     # Durchmesser nominal / maximal (Schrumpfschlauch, Toleranz)
 CELL_L_MIN, CELL_L_NOM, CELL_L_MAX = 49.7, 50.5, 53.5   # blank 49.7-50.5, mit Schutzschaltung/Knopfpol bis ca. 53
@@ -134,6 +140,10 @@ BAT_CABLE_X, BAT_CABLE_Y = -22.6, -17.0   # BAT-JST (gemessen X -22.6, Y -21.8; 
 CABLE_SLOT = (8.0, 19.0) # Breite X, Hoehe Y des Kabeldurchlasses im Boden (Y -26.5..-7.5)
 BAT_STRUTS = _B["struts"]   # Opfer-Stege im Akkufach (nur im Druckteil) tragen die Fachdecke
 FLOOR_T = 1.5           # Trennboden Bauteilraum / Akkufach
+# --- Variante ohne Akku: Rueckseite = massiver Boden Z 0..Z_FLOOR_TOP ---
+# Die Schwalbenschwanz-Nuten reichen bis z = DT_DEPTH (2,8); darueber muessen >= 1,0 mm Material bleiben, ausserdem ueber
+# der Rastmulde (Kugel O2 bei z = DT_TIP, Oberkante 3,5) >= 0,4 mm -> Boden 3,9 mm (bei Akku liegt dort das Fach/Rippenband).
+NOBAT_FLOOR = 3.9
 # --- Anschluesse (Rueckansicht -> Modell umgerechnet) ---
 USB_X = -0.7            # bitte nachmessen
 USB_PLUG_W, USB_PLUG_H = 14.0, 8.0      # Stecker-Overmold
@@ -175,6 +185,8 @@ INNER = BOARD + 2 * CLR
 R_IN = BOARD_R + CLR
 DOOR_GROOVE_H = DOOR_T + DT_CLR
 CAV_H = RAIL_T + DOOR_GROOVE_H + BAT_T      # Akkufach Hoehe (Z 0..CAV_H)
+if NOBAT:
+    CAV_H = NOBAT_FLOOR - FLOOR_T           # hier nur: Tiefe der Antennen-Aussparung von hinten (Rest = FLOOR_T)
 Z_FLOOR_TOP = CAV_H + FLOOR_T
 Z_PCB_BACK = Z_FLOOR_TOP + COMP_T + COMP_GAP
 Z_PCB_TOP = Z_PCB_BACK + PCB_T
@@ -309,42 +321,44 @@ def make_body():
     b = rbox(OUTER, OUTER, 0, Z_BODY_TOP, R_OUT)
     # Bauteilraum (Platine + LCD)
     b = b.cut(rbox(INNER, INNER, Z_FLOOR_TOP, Z_BODY_TOP + 1, R_IN))
-    # Akkufach (von hinten) + Deckelfuehrung
-    b = b.cut(box(POCKET_X0, POCKET_X1, POCKET_Y0, POCKET_Y1, -1, CAV_H))
-    b = b.cut(box(-RECESS_HALF, RECESS_HALF, -OUTER / 2 - 1, RECESS_Y1, RAIL_T, RAIL_T + DOOR_GROOVE_H))
-    # Rasten-Mulden fuer Deckel (geschlossen)
-    yb = DOOR_Y1 - 4.0
-    for s in (-1, 1):
-        b = b.cut(cyl_z(s * RECESS_HALF, yb, RAIL_T, RAIL_T + DOOR_GROOVE_H, 0.8))
-    # Kabeldurchlass zum BAT-Stecker
-    cx, cy = BAT_CABLE_X, BAT_CABLE_Y
-    b = b.cut(box(max(cx - CABLE_SLOT[0] / 2, POCKET_X0 + 0.0), cx + CABLE_SLOT[0] / 2,
-                  cy - CABLE_SLOT[1] / 2, cy + CABLE_SLOT[1] / 2, CAV_H - 0.1, Z_FLOOR_TOP + 0.1))
-    if CYL:
-        b = cell_bay_features(b)
+    if not NOBAT:
+        # Akkufach (von hinten) + Deckelfuehrung
+        b = b.cut(box(POCKET_X0, POCKET_X1, POCKET_Y0, POCKET_Y1, -1, CAV_H))
+        b = b.cut(box(-RECESS_HALF, RECESS_HALF, -OUTER / 2 - 1, RECESS_Y1, RAIL_T, RAIL_T + DOOR_GROOVE_H))
+        # Rasten-Mulden fuer Deckel (geschlossen)
+        yb = DOOR_Y1 - 4.0
+        for s in (-1, 1):
+            b = b.cut(cyl_z(s * RECESS_HALF, yb, RAIL_T, RAIL_T + DOOR_GROOVE_H, 0.8))
+        # Kabeldurchlass zum BAT-Stecker
+        cx, cy = BAT_CABLE_X, BAT_CABLE_Y
+        b = b.cut(box(max(cx - CABLE_SLOT[0] / 2, POCKET_X0 + 0.0), cx + CABLE_SLOT[0] / 2,
+                      cy - CABLE_SLOT[1] / 2, cy + CABLE_SLOT[1] / 2, CAV_H - 0.1, Z_FLOOR_TOP + 0.1))
+        if CYL:
+            b = cell_bay_features(b)
     # Antennenaussparung (Rueckseite duenn)
     if ANT_RECESS:
         b = b.cut(box(ANT_X[0], ANT_X[1], ANT_Y[0], ANT_Y[1], -1, CAV_H))
     # Schwalbenschwanz-Nuten (Portrait + Querformat)
     for g in groove_cutters():
         b = b.cut(g)
-    # Hohlraeume Rueckseite (offen nach hinten, Boden FLOOR_T bleibt), volle Baender um Nuten + Akkufach
-    h = OUTER / 2 - REAR_RIM
-    keep = box(-RECESS_HALF - REAR_BLOCK, RECESS_HALF + REAR_BLOCK, -OUTER, RECESS_Y1 + REAR_BLOCK, -2, CAV_H + 1)
-    keep = keep.union(box(CLIP_CX - REAR_BAND, CLIP_CX + REAR_BAND, -OUTER, OUTER, -2, CAV_H + 1))
-    keep = keep.union(box(-OUTER, OUTER, CLIP_CY - REAR_BAND, CLIP_CY + REAR_BAND, -2, CAV_H + 1))
-    k = 1
-    while -h + k * REAR_RIB_PITCH < h - 1:
-        t0 = -h + k * REAR_RIB_PITCH
-        keep = keep.union(box(t0 - RIB_T / 2, t0 + RIB_T / 2, -OUTER, OUTER, -2, CAV_H + 1))
-        keep = keep.union(box(-OUTER, OUTER, t0 - RIB_T / 2, t0 + RIB_T / 2, -2, CAV_H + 1))
-        k += 1
-    if ANT_RECESS:   # Rippe direkt neben der Antennenzone (nicht darin)
-        keep = keep.union(box(ANT_X[0] - RIB_T, ANT_X[0], -OUTER, OUTER, -2, CAV_H + 1))
-    if CHARGER:      # massiver Rahmen um den Kabel-/Modulraum (ersetzt dort das Rippenraster)
-        keep = keep.union(box(FRAME_X0, FRAME_X1, BAY_Y0 - 0.4, FRAME_Y1, -2, CAV_H + 1))
-    void = box(-h, h, -h, h, -1, CAV_H).cut(keep)
-    b = b.cut(void)
+    if not NOBAT:
+        # Hohlraeume Rueckseite (offen nach hinten, Boden FLOOR_T bleibt), volle Baender um Nuten + Akkufach
+        h = OUTER / 2 - REAR_RIM
+        keep = box(-RECESS_HALF - REAR_BLOCK, RECESS_HALF + REAR_BLOCK, -OUTER, RECESS_Y1 + REAR_BLOCK, -2, CAV_H + 1)
+        keep = keep.union(box(CLIP_CX - REAR_BAND, CLIP_CX + REAR_BAND, -OUTER, OUTER, -2, CAV_H + 1))
+        keep = keep.union(box(-OUTER, OUTER, CLIP_CY - REAR_BAND, CLIP_CY + REAR_BAND, -2, CAV_H + 1))
+        k = 1
+        while -h + k * REAR_RIB_PITCH < h - 1:
+            t0 = -h + k * REAR_RIB_PITCH
+            keep = keep.union(box(t0 - RIB_T / 2, t0 + RIB_T / 2, -OUTER, OUTER, -2, CAV_H + 1))
+            keep = keep.union(box(-OUTER, OUTER, t0 - RIB_T / 2, t0 + RIB_T / 2, -2, CAV_H + 1))
+            k += 1
+        if ANT_RECESS:   # Rippe direkt neben der Antennenzone (nicht darin)
+            keep = keep.union(box(ANT_X[0] - RIB_T, ANT_X[0], -OUTER, OUTER, -2, CAV_H + 1))
+        if CHARGER:      # massiver Rahmen um den Kabel-/Modulraum (ersetzt dort das Rippenraster)
+            keep = keep.union(box(FRAME_X0, FRAME_X1, BAY_Y0 - 0.4, FRAME_Y1, -2, CAV_H + 1))
+        void = box(-h, h, -h, h, -1, CAV_H).cut(keep)
+        b = b.cut(void)
     if CHARGER:
         b = charger_bay(b)
     # Antennenzone nochmals ganz frei (nur Boden)
@@ -642,7 +656,7 @@ def render_png(items, path, elev, azim, title="", size=900):
 def clip_hold_estimate():
     """Grobe Abschaetzung (ANNAHMEN: PETG E=1200 MPa quer zu den Schichten, mu=0.4, Geraetemasse siehe Dict)."""
     E, mu, g = 1200.0, 0.4, 9.81
-    mass = {"lipo_503450": 0.075, "lifepo4_14500": 0.130}[BATTERY_TYPE]       # kg, geschaetzt (Teile + Board + Zelle)
+    mass = {"lipo_503450": 0.075, "lifepo4_14500": 0.130, "none": 0.085}[BATTERY_TYPE]   # kg, geschaetzt (Teile + Board [+ Zelle])
     delta = (SLAT_T - (SLAT_T - PRONG_PRELOAD)) / 2                          # Auslenkung je Zinke
     Lp = HOOK_DEPTH - 2.0                                                    # wirksame Biegelaenge (bis zum Haken)
     I = PRONG_W * PRONG_T ** 3 / 12
@@ -761,6 +775,94 @@ def run_cyl_probes(body, door, lid, clip_asm, asm_parts, body_print, inside, pro
     probe(f"Clip-Haltesicherheit gegen Rutschen {h['sf_slip']:.1f} >= 3", h["sf_slip"] >= 3.0)
     probe(f"Clip-Haltesicherheit gegen Kippen {h['sf_tilt']:.1f} >= 2", h["sf_tilt"] >= 2.0)
 
+def run_common_probes(body, bezel, dummy, inside, probe, log):
+    """Funktions-Probes fuer alle Varianten: Platine/Dichtband/Schrauben, USB-C-Fenster, Seitentaster."""
+    log("== Platine / Rahmen / Anschluesse / Taster ==")
+    g = HOLE_GRID / 2
+    probe("Platine liegt auf 4 Standoffs (Standoff-Oberseite = Platinenrueckseite)",
+          all(inside(body, sx * g + 1.8, sy * g, Z_PCB_BACK - 0.1) for sx in (-1, 1) for sy in (-1, 1)))
+    probe("Zentrierzapfen in den 4 Platinenloechern, kuerzer als die Platine",
+          all(inside(body, sx * g, sy * g, Z_PCB_BACK + PIN_H / 2) for sx in (-1, 1) for sy in (-1, 1)) and PIN_H < PCB_T)
+    probe("Boden unter den Bauteilen: 0,3 mm Luft, Bauteilraum darueber frei",
+          inside(body, 0, 0, Z_FLOOR_TOP - 0.1) and not inside(body, 0, 0, Z_FLOOR_TOP + 0.1) and abs(Z_PCB_BACK - COMP_T - Z_FLOOR_TOP - COMP_GAP) < 1e-6)
+    probe("Platine + LCD (board_dummy) frei vom Koerper", vol_int(body, dummy) < 0.05)
+    bb = bezel.val().BoundingBox()
+    probe(f"Dichtband-Spalt Glas <-> Rahmen {Z_BODY_TOP - Z_LCD_TOP:.2f} mm (= LCD_FRONT_GAP), Rahmen liegt auf dem Koerper",
+          abs(Z_BODY_TOP - Z_LCD_TOP - LCD_FRONT_GAP) < 1e-6 and abs(bb.zmin - Z_BODY_TOP) < 1e-6)
+    ok4 = True
+    for sx, sy in itertools.product((-1, 1), (-1, 1)):
+        px, py = sx * SCREW_C, sy * SCREW_C
+        ok4 &= (not inside(body, px, py, Z_BODY_TOP - 2.0) and inside(body, px + 1.5, py, Z_BODY_TOP - 2.0)
+                and not inside(bezel, px, py, Z_BODY_TOP + 0.5) and inside(body, px, py, Z_BODY_TOP - PILOT_DEPTH - 0.5))
+    probe(f"4 Eckschrauben (+-{SCREW_C}): Pilotloch im Koerper, Durchgang im Rahmen, Material daneben", ok4)
+    # USB-C: Fenster 14 x 8 offen, Wand ober-/unterhalb und seitlich geschlossen, Buchse liegt im Fenster
+    yw = -(OUTER / 2 + BOARD / 2) / 2
+    pts = [(USB_X + dx, yw, Z_USB + dz) for dx in (-USB_PLUG_W / 2 + 0.3, 0, USB_PLUG_W / 2 - 0.3)
+           for dz in (-USB_PLUG_H / 2 + 0.3, 0, USB_PLUG_H / 2 - 0.3)]
+    probe(f"USB-C-Fenster {USB_PLUG_W:.0f} x {USB_PLUG_H:.0f} mm frei (9 Punkte)", not any(inside(body, *q) for q in pts))
+    probe("USB-C-Fenster: Wand darueber/darunter/daneben geschlossen",
+          inside(body, USB_X, yw, Z_USB + USB_PLUG_H / 2 + 0.5) and inside(body, USB_X, yw, Z_USB - USB_PLUG_H / 2 - 0.1)
+          and inside(body, USB_X - USB_PLUG_W / 2 - 0.5, yw, Z_USB) and inside(body, USB_X + USB_PLUG_W / 2 + 0.5, yw, Z_USB))
+    probe("USB-C-Buchse (3,2 mm hoch) liegt im Fenster", Z_USB - USB_PLUG_H / 2 <= Z_PCB_BACK - USB_H + 1e-6
+          and Z_USB + USB_PLUG_H / 2 >= Z_PCB_BACK - 1e-6 and Z_USB - USB_PLUG_H / 2 > 1.0)
+    # Seitentaster: Zunge duenn, Schlitze offen, Stoessel nahe der Platinenkante
+    ok_b = True
+    for s_ in (-1, 1):
+        for i, by in enumerate(BTN_Y):
+            free = by - 2.0 if i == 0 else by + 2.0
+            hinge = free + BTN_TAB_L if i == 0 else free - BTN_TAB_L
+            ym = (free + hinge) / 2
+            xo = OUTER / 2
+            ok_b &= (inside(body, s_ * (xo - 0.5), ym, Z_BTN)                                   # Zunge
+                     and not inside(body, s_ * (xo - BTN_TAB_T - 0.5), ym, Z_BTN)               # innen ausgespart
+                     and not inside(body, s_ * (xo - 0.5), ym, Z_BTN + BTN_TAB_H / 2 + BTN_SLIT / 2)   # Schlitz oben
+                     and not inside(body, s_ * (xo - 0.5), ym, Z_BTN - BTN_TAB_H / 2 - BTN_SLIT / 2)   # Schlitz unten
+                     and inside(body, s_ * (BOARD / 2 + BTN_NUB + 0.1), by, Z_BTN)              # Stoessel
+                     and not inside(body, s_ * (BOARD / 2 + 0.05), by, Z_BTN))                  # Spalt zur Platine
+    probe("Seitentaster (2 je Seite): Biegezunge, Schlitze, Stoessel mit Spalt zur Platine", ok_b)
+
+def run_nobat_probes(body, bezel, dummy, clip_asm, asm_parts, inside, probe, log):
+    """Variante ohne Akku: geschlossene Rueckseite, kein Fach/Deckel, genug Material ueber den Nuten, duenn."""
+    log("== Ohne Akku (nur USB-C): geschlossene Rueckseite ==")
+    probe("Kein Akkudeckel / keine Akku-Teile in der Baugruppe", not any(k in asm_parts for k in ("battery_door", "cell_dummy", "charger_dummy", "charger_lid")))
+    probe(f"Gesamtdicke {Z_TOTAL:.1f} mm <= 16,5 (LiPo: 22,3)", Z_TOTAL <= 16.5)
+    # Rueckseite z=0,3 geschlossen ausser Nuten (Portrait/Querformat) und Antennen-Aussparung
+    n_, xs = DT_NECK / 2 + 0.5, DT_XSHIFT
+    def allowed(x, y):
+        if ANT_X[0] - 0.01 <= x <= ANT_X[1] + 0.01 and ANT_Y[0] - 0.01 <= y <= ANT_Y[1] + 0.01:
+            return True
+        if abs(x - (CLIP_CX + xs)) <= n_ and y >= CLIP_CY - CLIP_RIDGE_L / 2 - 0.4:
+            return True
+        return abs(y - (CLIP_CY + xs)) <= n_ and x <= CLIP_CX + CLIP_RIDGE_L / 2 + 0.4
+    opn, stray = 0, []
+    for x in range(-36, 37, 2):
+        for y in range(-36, 37, 2):
+            if not inside(body, x, y, 0.3):
+                opn += 1
+                if not allowed(x, y):
+                    stray.append((x, y))
+    probe(f"Rueckseite geschlossen (z=0,3): {opn} offene Rasterpunkte nur in Nuten/Antennenzone", opn > 0 and not stray)
+    probe("BAT-Stecker J1 (X -22,6, Y -17) ueberdeckt: Boden massiv, kein Kabelschlitz",
+          all(inside(body, BAT_CABLE_X + dx, BAT_CABLE_Y + dy, z) for dx in (-3, 0, 3) for dy in (-8, 0, 8) for z in (0.3, 1.5, Z_FLOOR_TOP - 0.3)))
+    # Material ueber den Schwalbenschwanz-Nuten
+    over = Z_FLOOR_TOP - DT_DEPTH
+    probe(f"Material ueber den Nuten {over:.2f} mm >= 1,0", over >= 1.0 - 1e-9
+          and inside(body, CLIP_CX + xs, CLIP_CY + 8.0, DT_DEPTH + 0.5) and inside(body, CLIP_CX + xs + 8.0, CLIP_CY + xs, DT_DEPTH + 0.5)
+          and inside(body, CLIP_CX + xs, CLIP_CY + xs, Z_FLOOR_TOP - 0.2))
+    over_d = Z_FLOOR_TOP - (DT_TIP + 1.0)
+    probe(f"Material ueber der Rastmulde {over_d:.2f} mm >= 0,3", over_d >= 0.3 - 1e-9
+          and inside(body, CLIP_CX + xs, CLIP_CY + DETENT_Y, Z_FLOOR_TOP - 0.2))
+    probe("Nuten reichen in die Aussenwand (Oeffnung am Rand, Tiefe bis z=DT_DEPTH)",
+          not inside(body, CLIP_CX + xs, OUTER / 2 - 0.5, DT_DEPTH - 0.3) and not inside(body, -OUTER / 2 + 0.5, CLIP_CY + xs, DT_DEPTH - 0.3)
+          and inside(body, CLIP_CX + xs, OUTER / 2 - 0.5, DT_DEPTH + 0.3) and inside(body, -OUTER / 2 + 0.5, CLIP_CY + xs, DT_DEPTH + 0.3))
+    # Wand unter den Bauteilen: Standoffs/Boden tragen die Platine, USB-Fenster endet nicht im Boden
+    probe(f"Standoff-Fuss im Boden verankert (Boden {Z_FLOOR_TOP:.1f} mm)", inside(body, HOLE_GRID / 2 + 1.8, HOLE_GRID / 2, Z_FLOOR_TOP - 0.5))
+    probe("Boden hinter dem USB-C-Fenster geschlossen (z < Fensterunterkante)",
+          inside(body, USB_X, -OUTER / 2 + 1.5, Z_USB - USB_PLUG_H / 2 - 0.5) and Z_USB - USB_PLUG_H / 2 >= 1.0)
+    h = clip_hold_estimate()
+    probe(f"Clip-Haltesicherheit gegen Rutschen {h['sf_slip']:.1f} >= 3", h["sf_slip"] >= 3.0)
+    probe(f"Clip-Haltesicherheit gegen Kippen {h['sf_tilt']:.1f} >= 2", h["sf_tilt"] >= 2.0)
+
 def vol_int(a, b):
     try:
         return a.intersect(b).val().Volume()
@@ -769,9 +871,12 @@ def vol_int(a, b):
 
 def main():
     os.makedirs(OUT, exist_ok=True)
-    body, bezel, door, clip, dummy = make_body(), make_bezel(), make_door(), make_clip(), make_board_dummy()
-    asm_parts = {"body": body, "front_bezel": bezel, "battery_door": door,
-                 "vent_clip": clip, "board_dummy": dummy}
+    body, bezel, clip, dummy = make_body(), make_bezel(), make_clip(), make_board_dummy()
+    door = None if NOBAT else make_door()
+    asm_parts = {"body": body, "front_bezel": bezel}
+    if door is not None:
+        asm_parts["battery_door"] = door
+    asm_parts.update({"vent_clip": clip, "board_dummy": dummy})
     if CHARGER:
         lid = make_charger_lid()
         asm_parts["charger_lid"] = lid
@@ -791,9 +896,10 @@ def main():
     plate_parts = [
         ("body", to_plate(body_print, "none", 45, 45)),
         ("front_bezel", to_plate(bezel, "flipx", 130, 45)),
-        ("battery_door", to_plate(door, "flipx", 45, 120)),
-        ("vent_clip", to_plate(clip, "clip", 130, 120)),
     ]
+    if door is not None:
+        plate_parts.append(("battery_door", to_plate(door, "flipx", 45, 120)))
+    plate_parts.append(("vent_clip", to_plate(clip, "clip", 130, 120)))
     if CHARGER:
         plate_parts.append(("charger_lid", to_plate(lid, "none", 130, 175)))
 
@@ -869,15 +975,18 @@ def main():
     probe("Nut Querformat endet am Anschlag (Wand dahinter)", inside(body, CLIP_CX + CLIP_RIDGE_L / 2 + 1.0, CLIP_CY + xs_, 1.0))
     pts = [(CLIP_CX + xs_, y, 1.0) for y in range(int(CLIP_CY - CLIP_RIDGE_L / 2), int(OUTER / 2))]
     probe("Nut Hochformat frei von oberer Aussenkante bis Anschlag", not any(inside(body, *q) for q in pts))
-    # 2) Akkudeckel wird nach aussen (-Z) von der Lippe gehalten
-    bd = door.val().BoundingBox()
-    probe("Deckel liegt hinter der Lippe (zmin >= RAIL_T)", bd.zmin >= RAIL_T - 1e-6)
-    probe("Deckel ueberlappt Lippe >= 1.5 mm je Seite", bd.xmax - BAT_L / 2 >= 1.5 and -bd.xmin - BAT_L / 2 >= 1.5)
-    for sgn in (-1, 1):
-        x = sgn * (BAT_L / 2 + 1.0)
-        probe(f"Lippe (Koerper) unter dem Deckel bei x={x:+.0f}, z={RAIL_T/2:.1f}", inside(body, x, PY, RAIL_T / 2))
-        probe(f"Deckel sitzt in Nut bei x={x:+.0f}", inside(door, x, PY, RAIL_T + DOOR_T / 2) and not inside(body, x, PY, RAIL_T + DOOR_T / 2))
-    probe("Akkufach nach hinten offen (Oeffnung frei)", not inside(body, 0, PY, 0.2) and not inside(body, 0, PY, CAV_H - 0.5))
+    if NOBAT:
+        run_nobat_probes(body, bezel, dummy, clip_asm, asm_parts, inside, probe, log)
+    else:
+        # 2) Akkudeckel wird nach aussen (-Z) von der Lippe gehalten
+        bd = door.val().BoundingBox()
+        probe("Deckel liegt hinter der Lippe (zmin >= RAIL_T)", bd.zmin >= RAIL_T - 1e-6)
+        probe("Deckel ueberlappt Lippe >= 1.5 mm je Seite", bd.xmax - BAT_L / 2 >= 1.5 and -bd.xmin - BAT_L / 2 >= 1.5)
+        for sgn in (-1, 1):
+            x = sgn * (BAT_L / 2 + 1.0)
+            probe(f"Lippe (Koerper) unter dem Deckel bei x={x:+.0f}, z={RAIL_T/2:.1f}", inside(body, x, PY, RAIL_T / 2))
+            probe(f"Deckel sitzt in Nut bei x={x:+.0f}", inside(door, x, PY, RAIL_T + DOOR_T / 2) and not inside(body, x, PY, RAIL_T + DOOR_T / 2))
+        probe("Akkufach nach hinten offen (Oeffnung frei)", not inside(body, 0, PY, 0.2) and not inside(body, 0, PY, CAV_H - 0.5))
     # 3) TF-Fenster
     for dx in (-TF_W / 2 + 0.5, 0, TF_W / 2 - 0.5):
         probe(f"TF-Fenster frei bei X={TF_X + dx:.1f}", not inside(body, TF_X + dx, 36.5, Z_PCB_BACK - 1.5))
@@ -888,10 +997,10 @@ def main():
     probe("Rastnase am Clip vorhanden", inside(clip_asm, CLIP_CX + xs_, CLIP_CY + DETENT_Y, DT_TIP + 0.3))
     # 5) Bruecken-Spannweiten (Druckteil, Schnitt z=0.5)
     ZB = LID_T + 0.5 if CHARGER else 0.5   # Pruefhoehe (mit Charger-Deckel liegt der Falz unterhalb)
-    lines = {"Akkufach": ([(0.0, y * 1.0, 0.5) for y in range(-38, -17)] if CYL else [(x, -20.0, ZB) for x in range(-26, 27)]),
-             "Hohlraum y=30": [(x * 1.0, 30.0, ZB) for x in range(-35, 36)],
+    lines = {} if NOBAT else {"Akkufach": ([(0.0, y * 1.0, 0.5) for y in range(-38, -17)] if CYL else [(x, -20.0, ZB) for x in range(-26, 27)])}
+    lines.update({"Hohlraum y=30": [(x * 1.0, 30.0, ZB) for x in range(-35, 36)],
              "Hohlraum y=-8 (rechts)": [(x * 1.0, -8.0, ZB) for x in range(32, 36)],
-             "Hohlraum x=-33": [(-33.0, y * 1.0, ZB) for y in range(-35, 36)]}
+             "Hohlraum x=-33": [(-33.0, y * 1.0, ZB) for y in range(-35, 36)]})
     for nm, pts in lines.items():
         r = void_run(body_print, pts)
         probe(f"Maximale freie Spannweite {nm}: {r:.0f} mm <= 20", r <= 20)
@@ -912,17 +1021,22 @@ def main():
                 k += 1
             n += (k - 1) * math.hypot(dx, dy)
         return n + 1
-    worst = (0, None)
-    for gx in range(-36, 37, 3):
-        for gy in range(-36, 37, 3):
-            if inside(body_print, gx, gy, ZC):
-                continue
-            r = min(free_run(body_print, gx, gy, 1, 0), free_run(body_print, gx, gy, 0, 1))
-            if r > 20:   # Kreuzungen (z. B. Schwalbenschwanz-Nuten): auch Diagonalen pruefen
-                r = min(r, free_run(body_print, gx, gy, 1, 1), free_run(body_print, gx, gy, 1, -1))
-            if r > worst[0]:
-                worst = (r, (gx, gy))
-    probe(f"Bruecken 2D: groesste Freispannweite (kuerzeste Richtung) {worst[0]:.0f} mm bei {worst[1]} <= 20", worst[0] <= 20)
+    # ohne Akku liegt auf ZC schon massives Material; dort Schnitte durch die Nuten/Antennen-Aussparung pruefen
+    for zc_ in ((1.0, 2.0) if NOBAT else (ZC,)):
+        worst = (0, None)
+        for gx in range(-36, 37, 3):
+            for gy in range(-36, 37, 3):
+                if inside(body_print, gx, gy, zc_):
+                    continue
+                r = min(free_run(body_print, gx, gy, 1, 0, zc_), free_run(body_print, gx, gy, 0, 1, zc_))
+                if r > 20:   # Kreuzungen (z. B. Schwalbenschwanz-Nuten): auch Diagonalen (und steilere Richtungen) pruefen
+                    for ddx, ddy in ((1, 1), (1, -1), (2, 1), (2, -1), (1, 2), (1, -2)):
+                        r = min(r, free_run(body_print, gx, gy, ddx, ddy, zc_))
+                if r > worst[0]:
+                    worst = (r, (gx, gy))
+        zl = f" (z={zc_})" if NOBAT else ""
+        probe(f"Bruecken 2D{zl}: groesste Freispannweite (kuerzeste Richtung) {worst[0]:.0f} mm bei {worst[1]} <= 20", worst[0] <= 20)
+    run_common_probes(body, bezel, dummy, inside, probe, log)
     h = clip_hold_estimate()
     log(f"Clip-Schaetzung (ANNAHMEN: PETG E=1200 MPa, mu=0.4, Masse {h['mass']*1000:.0f} g, Hebel {h['arm']:.0f} mm): "
         f"Klemmkraft je Zinke {h['F']:.1f} N, Biegespannung {h['sigma']:.1f} MPa, Sicherheit Rutschen {h['sf_slip']:.1f} / Kippen {h['sf_tilt']:.1f}")
@@ -968,8 +1082,9 @@ def main():
     ex = [(asm_parts["body"], cols["body"], (0, 0, 0)),
           (asm_parts["board_dummy"], cols["board_dummy"], (0, 0, 22)),
           (asm_parts["front_bezel"], cols["front_bezel"], (0, 0, 45)),
-          (asm_parts["battery_door"], cols["battery_door"], (0, 0, -25)),
           (asm_parts["vent_clip"], cols["vent_clip"], (0, 0, -30))]
+    if door is not None:
+        ex.append((asm_parts["battery_door"], cols["battery_door"], (0, 0, -25)))
     for n, dz in (("charger_lid", -25), ("cell_dummy", -22), ("charger_dummy", -25)):
         if n in asm_parts:
             ex.append((asm_parts[n], cols[n], (0, 0, dz)))

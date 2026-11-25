@@ -49,8 +49,8 @@ jobs:
           mkdir -p _site/firmware _site/gehaeuse
           cp -r web/. _site/
           cp out/firmware-factory.bin _site/firmware/
-          # Druckdateien beider Varianten flach nach gehaeuse/, mit Variantenpraefix (lipo_*, lifepo4_*)
-          for v in lipo lifepo4; do
+          # Druckdateien aller Varianten flach nach gehaeuse/, mit Variantenpraefix (lipo_*, lifepo4_*, usb_*)
+          for v in lipo lifepo4 usb; do
             for f in enclosure/export/$v/*.3mf enclosure/export/$v/*.step enclosure/export/$v/*.stl; do
               [ -e "$f" ] && cp "$f" "_site/gehaeuse/${v}_$(basename "$f")" || true
             done
