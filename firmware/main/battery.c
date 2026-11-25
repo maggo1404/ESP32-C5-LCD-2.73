@@ -47,28 +47,62 @@ float battery_warn_volts(int type) { return type == BATTERY_LIFEPO4 ? 3.15f : 3.
 float battery_crit_volts(int type) { return type == BATTERY_LIFEPO4 ? 3.10f : 3.50f; }
 float battery_shutdown_volts(int type) { return type == BATTERY_LIFEPO4 ? 3.05f : 3.35f; }
 
+bool battery_reading_ambiguous(float volts)
+{
+    return volts >= BATTERY_AMBIGUOUS_MIN_V && volts <= BATTERY_AMBIGUOUS_MAX_V;
+}
+
 void battery_guard_init(battery_guard_t *g)
 {
     g->low_since_ms = -1;
+    g->low_min_v = 0.0f;
     g->ok_run = 0;
+    g->invalid_run = 0;
 }
 
 bool battery_guard_update(battery_guard_t *g, int type, float volts, int64_t now_ms)
 {
     if (!battery_present(volts)) {
-        battery_guard_init(g); /* no battery / invalid reading: never shut down on it */
-        return false;
+        if (++g->invalid_run >= BATTERY_INVALID_RESET_N) {
+            battery_guard_init(g); /* sustained: no battery / sensor failure */
+            g->invalid_run = BATTERY_INVALID_RESET_N;
+        }
+        return false; /* never shut down on an invalid reading */
     }
+    g->invalid_run = 0;
     if (volts < battery_shutdown_volts(type)) {
         g->ok_run = 0;
         if (g->low_since_ms < 0) {
             g->low_since_ms = now_ms;
+            g->low_min_v = volts;
+            return false;
         }
-        return now_ms - g->low_since_ms > BATTERY_SHUTDOWN_HOLD_MS;
+        if (volts < g->low_min_v) {
+            g->low_min_v = volts;
+        }
+        if (now_ms - g->low_since_ms < BATTERY_SHUTDOWN_HOLD_MS) {
+            return false;
+        }
+        if (volts > g->low_min_v + BATTERY_RISE_MV / 1000.0f) {
+            /* voltage is rising: charging, restart the window */
+            g->low_since_ms = now_ms;
+            g->low_min_v = volts;
+            return false;
+        }
+        return true;
     }
     if (++g->ok_run >= 2) {
         g->low_since_ms = -1;
         g->ok_run = 2;
     }
     return false;
+}
+
+bool battery_guard_poll(battery_guard_t *g, bool enabled, int type, float volts, int64_t now_ms)
+{
+    if (!enabled) {
+        battery_guard_init(g);
+        return false;
+    }
+    return battery_guard_update(g, type, volts, now_ms);
 }

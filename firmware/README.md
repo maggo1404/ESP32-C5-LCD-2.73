@@ -187,14 +187,35 @@ Abschaltung (`main/battery.c`):
 | Kurve (Ruhespannung, ungefähr) | 4,20 V=100 %, 4,00=80, 3,85=60, 3,75=40, 3,65=20, 3,50=5, 3,30=0 | 3,40 V=100 %, 3,32=80, 3,30=60, 3,27=40, 3,22=20, 3,10=5, 3,00=0 |
 | gelb unter | 3,65 V | 3,15 V |
 | rot unter | 3,50 V | 3,10 V |
-| Abschaltung (> 10 s darunter) | 3,35 V | 3,05 V |
+| Abschaltung (> 60 s darunter, nur wenn aktiviert) | 3,35 V | 3,05 V |
 
 Die Kurven sind allgemeine Näherungen der Ruhespannung (unter Last liegt die Spannung niedriger,
-die LiFePO4-Kurve ist sehr flach) und nicht an dieser Hardware gemessen. Die Abschaltung schließt
-die pcap-Datei sauber (`sd_log_shutdown()`), zeigt eine Meldung und geht in Deep Sleep (Wiederanlauf
-per Reset/Spannung aus-ein). Ungültige Messwerte (`n/a`) lösen nie eine Abschaltung aus; einzelne
-Ausreißer auch nicht (Schwelle muss > 10 s unterschritten bleiben). USB-Betrieb und Ladezustand lassen
-sich auf diesem Board nicht zuverlässig auslesen und werden daher weder erkannt noch angezeigt.
+die LiFePO4-Kurve ist sehr flach) und nicht an dieser Hardware gemessen.
+
+**Standardtyp pro Build:** `CONFIG_ITS_DEFAULT_BATTERY_TYPE` (Kconfig-Menü *ITS-G5 Display*,
+`idf.py menuconfig`, oder `CONFIG_ITS_DEFAULT_BATTERY_TYPE=1` in einer `sdkconfig.defaults`).
+Ein in NVS gespeicherter Wert gewinnt. Bei LiFePO4-Aufbauten zuerst *Einstellungen > Akku* auf
+LiFePO4 stellen, sonst zeigt das Gerät die LiPo-Kurve und warnt falsch.
+
+**Auto-Abschaltung (aus bis zur Kalibrierung):** *Einstellungen > Auto-Abschaltung* (Standard *aus*,
+in NVS). Eingeschaltet schließt das Gerät die pcap-Datei sauber (`sd_log_shutdown()`), zeigt eine
+Meldung und geht in Deep Sleep, wenn die Spannung 60 s unter der Schwelle bleibt und in dieser Zeit
+nicht um mehr als 20 mV über das Minimum steigt (steigende Spannung = Ladung, Fenster beginnt neu).
+Ein einzelner ungültiger Messwert wird ignoriert (erst 5 in Folge setzen den Wächter zurück), kein
+Akku (< 2 V, `n/a`) löst nie aus. Aufwachen: Taste PREV oder NEXT (GPIO2/3, LP-IO des C5; BOOT/GPIO28
+ist kein LP-IO), alternativ Reset/Spannung aus-ein (auf USB hält Q2 die Versorgung, ein Umstecken
+allein startet nicht neu). USB-Betrieb und Ladezustand sind nicht auslesbar.
+
+**Messgrenze unter ca. 3,4 V (wichtig):** Die ADC-Referenz des CH32V003 ist seine Versorgung
+(VCC3V3). Fällt die Zelle unter die Dropout-Grenze des MP1605 (ca. 3,37 V, Annahme), folgt VCC3V3
+der Zelle, und die berechnete Spannung `raw*3,3/4095*3` bleibt bei etwa 3,36 V hängen, egal wie leer
+die Zelle ist. Folge: Die LiFePO4-Schwellen (3,15 / 3,10 / 3,05 V) und die LiPo-Abschaltung (3,35 V)
+sind ohne Hardwareänderung **nicht erreichbar**, die Prozentanzeige bliebe bei LiFePO4 bei ca. 90 %.
+Darum zeigt die UI im Bereich 3,33 bis 3,40 V statt der Prozentzahl nur `<=3,4 V` bzw. `<=3.35 V
+(Messung ungenau)`. Mögliche Hardwarelösung: den VBAT-Teiler (R21/R25-Mittelpunkt) zusätzlich auf einen
+freien ADC-Pin des ESP32-C5 führen (ADC-Referenz intern, unabhängig von VCC3V3), dann ist eine
+Messung bis 3,0 V möglich. Bis dahin bleibt die Auto-Abschaltung aus; Abschaltschutz sollte die
+Schutzschaltung (PCM) der Zelle übernehmen.
 
 **Akku-ADC-Skalierung (unbestätigt):** `board_battery_volts()` rechnet wie Waveshares
 `bat_adc_read()` (Demos `01_factory`, `07_exio`): `raw * 3,3 / 4095 * 3` (R21/R25 = 3:1). Der

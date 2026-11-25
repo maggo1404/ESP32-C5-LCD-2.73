@@ -1,0 +1,13 @@
+menu "ITS-G5 Display"
+
+    config ITS_DEFAULT_BATTERY_TYPE
+        int "Default battery type (0 = LiPo, 1 = LiFePO4)"
+        range 0 1
+        default 0
+        help
+            Used until the user picks the type in Einstellungen > Akku (then the
+            NVS value wins). Set to 1 for LiFePO4 builds, e.g.
+            `idf.py menuconfig` (ITS-G5 Display) or by adding
+            CONFIG_ITS_DEFAULT_BATTERY_TYPE=1 to a sdkconfig.defaults file.
+
+endmenu

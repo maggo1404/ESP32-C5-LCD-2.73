@@ -15,6 +15,7 @@ static volatile settings_t s_cfg = {
     .usb_out = false,
     .brightness = 80,
     .battery_type = DEFAULT_BATTERY_TYPE,
+    .auto_off = false,
 };
 
 static bool channel_valid(uint16_t ch)
@@ -47,6 +48,9 @@ void settings_load(void)
     if (nvs_get_u8(h, "battype", &v) == ESP_OK && v < BATTERY_TYPE_COUNT) {
         s_cfg.battery_type = v;
     }
+    if (nvs_get_u8(h, "autooff", &v) == ESP_OK) {
+        s_cfg.auto_off = v != 0;
+    }
     nvs_close(h);
 }
 
@@ -64,6 +68,7 @@ void settings_save(void)
     nvs_set_u8(h, "usb", c.usb_out);
     nvs_set_u8(h, "bright", c.brightness);
     nvs_set_u8(h, "battype", c.battery_type);
+    nvs_set_u8(h, "autooff", c.auto_off);
     err = nvs_commit(h);
     if (err != ESP_OK) {
         ESP_LOGW(TAG, "nvs_commit: %s", esp_err_to_name(err));
@@ -79,6 +84,7 @@ settings_t settings_get(void)
     c.usb_out = s_cfg.usb_out;
     c.brightness = s_cfg.brightness;
     c.battery_type = s_cfg.battery_type;
+    c.auto_off = s_cfg.auto_off;
     return c;
 }
 
@@ -102,3 +108,4 @@ void settings_set_battery_type(uint8_t type)
         s_cfg.battery_type = type;
     }
 }
+void settings_set_auto_off(bool on) { s_cfg.auto_off = on; }

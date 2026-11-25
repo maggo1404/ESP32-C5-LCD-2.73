@@ -62,43 +62,79 @@ int main(void)
     CHECK(battery_shutdown_volts(BATTERY_LIFEPO4) == 3.05f);
     CHECK(battery_shutdown_volts(BATTERY_LIPO) == 3.35f);
 
-    /* guard: sustained low triggers only after > 10 s */
+    /* ambiguous band (ADC reference sags with the cell) */
+    CHECK(battery_reading_ambiguous(3.36f) && battery_reading_ambiguous(3.33f));
+    CHECK(!battery_reading_ambiguous(3.20f) && !battery_reading_ambiguous(3.65f) && !battery_reading_ambiguous(-1.0f));
+
     battery_guard_t g;
+    const int64_t H = BATTERY_SHUTDOWN_HOLD_MS; /* 60 s */
+    /* sustained, flat low triggers only once the full hold time has passed */
     battery_guard_init(&g);
-    int64_t t = 1000;
-    CHECK(!battery_guard_update(&g, BATTERY_LIFEPO4, 3.00f, t));
-    CHECK(!battery_guard_update(&g, BATTERY_LIFEPO4, 3.00f, t + 10000));
-    CHECK(battery_guard_update(&g, BATTERY_LIFEPO4, 3.00f, t + 10001));
-    /* single low dip never triggers */
+    int64_t t0 = 1000;
+    CHECK(!battery_guard_update(&g, BATTERY_LIFEPO4, 3.00f, t0));
+    CHECK(!battery_guard_update(&g, BATTERY_LIFEPO4, 3.00f, t0 + 10001)); /* old 10 s limit: no */
+    CHECK(!battery_guard_update(&g, BATTERY_LIFEPO4, 3.00f, t0 + H - 1));
+    CHECK(battery_guard_update(&g, BATTERY_LIFEPO4, 3.00f, t0 + H));
+    /* rising voltage (USB charging a flat cell): no trigger, window restarts */
+    battery_guard_init(&g);
+    CHECK(!battery_guard_update(&g, BATTERY_LIFEPO4, 3.00f, 0));
+    CHECK(!battery_guard_update(&g, BATTERY_LIFEPO4, 3.02f, 30000));
+    CHECK(!battery_guard_update(&g, BATTERY_LIFEPO4, 3.04f, H)); /* +40 mV over min */
+    CHECK(!battery_guard_update(&g, BATTERY_LIFEPO4, 3.04f, H + 30000));
+    CHECK(!battery_guard_update(&g, BATTERY_LIFEPO4, 3.04f, 2 * H - 1)); /* new window not over */
+    CHECK(battery_guard_update(&g, BATTERY_LIFEPO4, 3.04f, 2 * H));      /* flat again: trigger */
+    /* small noise (< 20 mV) is not "rising" */
+    battery_guard_init(&g);
+    CHECK(!battery_guard_update(&g, BATTERY_LIPO, 3.30f, 0));
+    CHECK(!battery_guard_update(&g, BATTERY_LIPO, 3.31f, 30000));
+    CHECK(battery_guard_update(&g, BATTERY_LIPO, 3.315f, H));
+    /* short low dip never triggers */
     battery_guard_init(&g);
     CHECK(!battery_guard_update(&g, BATTERY_LIFEPO4, 3.00f, 0));
     CHECK(!battery_guard_update(&g, BATTERY_LIFEPO4, 3.20f, 3000));
     CHECK(!battery_guard_update(&g, BATTERY_LIFEPO4, 3.20f, 6000)); /* 2 ok -> reset */
-    CHECK(!battery_guard_update(&g, BATTERY_LIFEPO4, 3.00f, 20000));
-    CHECK(!battery_guard_update(&g, BATTERY_LIFEPO4, 3.00f, 25000));
-    CHECK(battery_guard_update(&g, BATTERY_LIFEPO4, 3.00f, 30001));
+    CHECK(!battery_guard_update(&g, BATTERY_LIFEPO4, 3.00f, 100000));
+    CHECK(!battery_guard_update(&g, BATTERY_LIFEPO4, 3.00f, 100000 + H - 1));
+    CHECK(battery_guard_update(&g, BATTERY_LIFEPO4, 3.00f, 100000 + H));
     /* one noisy high reading does not reset the timer */
     battery_guard_init(&g);
     CHECK(!battery_guard_update(&g, BATTERY_LIPO, 3.30f, 0));
     CHECK(!battery_guard_update(&g, BATTERY_LIPO, 3.50f, 3000));
     CHECK(!battery_guard_update(&g, BATTERY_LIPO, 3.30f, 6000));
-    CHECK(battery_guard_update(&g, BATTERY_LIPO, 3.30f, 10500));
-    /* invalid reading resets and never triggers */
+    CHECK(battery_guard_update(&g, BATTERY_LIPO, 3.30f, H + 500));
+    /* invalid readings: fewer than N in a row are ignored (no reset, no trigger) */
     battery_guard_init(&g);
     CHECK(!battery_guard_update(&g, BATTERY_LIPO, 3.30f, 0));
-    CHECK(!battery_guard_update(&g, BATTERY_LIPO, -1.0f, 5000));
-    CHECK(!battery_guard_update(&g, BATTERY_LIPO, -1.0f, 60000));
+    for (int i = 1; i < BATTERY_INVALID_RESET_N; i++)
+        CHECK(!battery_guard_update(&g, BATTERY_LIPO, -1.0f, 1000 * i));
+    CHECK(!battery_guard_update(&g, BATTERY_LIPO, 3.30f, H - 1));
+    CHECK(battery_guard_update(&g, BATTERY_LIPO, 3.30f, H));
+    /* N in a row reset the guard; an invalid reading itself never triggers */
+    battery_guard_init(&g);
+    CHECK(!battery_guard_update(&g, BATTERY_LIPO, 3.30f, 0));
+    for (int i = 1; i <= BATTERY_INVALID_RESET_N; i++)
+        CHECK(!battery_guard_update(&g, BATTERY_LIPO, -1.0f, 1000 * i));
+    CHECK(!battery_guard_update(&g, BATTERY_LIPO, 3.30f, 10 * H)); /* window restarted here */
+    CHECK(!battery_guard_update(&g, BATTERY_LIPO, 3.30f, 10 * H + H - 1));
+    CHECK(battery_guard_update(&g, BATTERY_LIPO, 3.30f, 10 * H + H));
+    /* invalid readings never trigger even when long past the hold time */
+    battery_guard_init(&g);
+    CHECK(!battery_guard_update(&g, BATTERY_LIPO, 3.30f, 0));
+    CHECK(!battery_guard_update(&g, BATTERY_LIPO, -1.0f, 10 * H));
     /* USB without battery: low floating reading for minutes never triggers */
     battery_guard_init(&g);
     for (int64_t t = 0; t <= 300000; t += 1000)
         CHECK(!battery_guard_update(&g, BATTERY_LIFEPO4, 0.6f, t));
-    CHECK(!battery_guard_update(&g, BATTERY_LIPO, 3.30f, 61000)); /* timer restarted */
-    CHECK(!battery_guard_update(&g, BATTERY_LIPO, 3.30f, 70000));
-    CHECK(battery_guard_update(&g, BATTERY_LIPO, 3.30f, 71500));
-    /* threshold is per type: 3.20 V is fine for LiFePO4 guard, low for LiPo */
+    /* threshold is per type: 3.20 V is fine for LiFePO4, low for LiPo */
     battery_guard_init(&g);
     CHECK(!battery_guard_update(&g, BATTERY_LIFEPO4, 3.20f, 0));
-    CHECK(!battery_guard_update(&g, BATTERY_LIFEPO4, 3.20f, 60000));
+    CHECK(!battery_guard_update(&g, BATTERY_LIFEPO4, 3.20f, 2 * H));
+    /* opt-in: disabled guard never triggers and keeps no state */
+    battery_guard_init(&g);
+    for (int64_t t = 0; t <= 5 * H; t += 1000)
+        CHECK(!battery_guard_poll(&g, false, BATTERY_LIFEPO4, 3.00f, t));
+    CHECK(!battery_guard_poll(&g, true, BATTERY_LIFEPO4, 3.00f, 6 * H)); /* starts fresh */
+    CHECK(battery_guard_poll(&g, true, BATTERY_LIFEPO4, 3.00f, 7 * H));
 
     if (fails) {
         printf("%d check(s) failed\n", fails);

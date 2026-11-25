@@ -24,7 +24,11 @@
 
 /* ---- Battery ---- */
 /* Default chemistry before the user picks one in Einstellungen (0 = LiPo, 1 = LiFePO4). */
+#ifdef CONFIG_ITS_DEFAULT_BATTERY_TYPE
+#define DEFAULT_BATTERY_TYPE CONFIG_ITS_DEFAULT_BATTERY_TYPE /* Kconfig: ITS-G5 Display */
+#else
 #define DEFAULT_BATTERY_TYPE 0
+#endif
 
 /* ---- Receiver ---- */
 #define RX_CHANNEL_MIN_MHZ   5860

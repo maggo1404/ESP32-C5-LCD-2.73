@@ -9,6 +9,7 @@
 #include "esp_heap_caps.h"
 #include "esp_log.h"
 #include "esp_rom_uart.h"
+#include "driver/rtc_io.h"
 #include "esp_sleep.h"
 #include "esp_system.h"
 #include "freertos/FreeRTOS.h"
@@ -18,6 +19,7 @@
 #include "its.h"
 #include "nvs_flash.h"
 
+#include "app_config.h"
 #include "battery.h"
 #include "board.h"
 #include "buttons.h"
@@ -129,8 +131,9 @@ static void diag_heartbeat(void)
  * message and go to deep sleep (no wake source: power cycle / reset to resume).
  * Invalid readings (-1, expander missing) never trigger it.
  * Limitation: USB power cannot be detected on this board (no readable VBUS
- * sense), so the guard also acts when the unit runs from USB with a flat cell
- * attached. */
+ * sense). Mitigation: the voltage must stay low for 60 s and not rise (charging
+ * restarts the window). The whole guard is opt-in (Einstellungen > Auto-Abschaltung)
+ * because the ADC cannot see below the regulator dropout, see battery.h. */
 static void battery_guard_task(void *arg)
 {
     (void)arg;
@@ -138,9 +141,9 @@ static void battery_guard_task(void *arg)
     battery_guard_init(&g);
     for (;;) {
         vTaskDelay(pdMS_TO_TICKS(1000));
-        int type = settings_get().battery_type;
+        settings_t cfg = settings_get();
         float v = board_battery_volts(); /* cached, refreshed every 3 s */
-        if (battery_guard_update(&g, type, v, esp_timer_get_time() / 1000)) {
+        if (battery_guard_poll(&g, cfg.auto_off, cfg.battery_type, v, esp_timer_get_time() / 1000)) {
             break;
         }
     }
@@ -151,6 +154,13 @@ static void battery_guard_task(void *arg)
     ui_show_message("Akku leer\nSpeicherkarte gesichert.\nGerät schaltet ab.\nBitte laden / Akku wechseln.");
     vTaskDelay(pdMS_TO_TICKS(3000));
     board_set_backlight(0);
+    /* Wake on PREV/NEXT (GPIO2/3, LP-IO capable on the C5, active low with pull-up).
+     * ENTER/BOOT (GPIO28) is not an LP IO. Without a wake source, replugging USB would
+     * not restart the unit (Q2 keeps VCC up). */
+    const uint64_t wake_mask = (1ULL << PIN_BTN_PREV) | (1ULL << PIN_BTN_NEXT);
+    rtc_gpio_pullup_en(PIN_BTN_PREV);
+    rtc_gpio_pullup_en(PIN_BTN_NEXT);
+    esp_sleep_enable_ext1_wakeup_io(wake_mask, ESP_EXT1_WAKEUP_ANY_LOW);
     esp_deep_sleep_start();
 }
 
