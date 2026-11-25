@@ -25,7 +25,7 @@ jobs:
       - run: cmake -S firmware/components/its/test -B build-test
       - run: cmake --build build-test
       - run: ctest --test-dir build-test --output-on-failure
-      - run: make -C firmware/main/test_battery
+      - run: make -C firmware/main/test_battery clean test
 
   deploy:
     name: Web-Flasher veroeffentlichen

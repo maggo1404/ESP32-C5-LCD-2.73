@@ -22,7 +22,7 @@ jobs:
       - name: Testen
         run: ctest --test-dir build-test --output-on-failure
       - name: Akku-Hosttests
-        run: make -C firmware/main/test_battery
+        run: make -C firmware/main/test_battery clean test
 
   firmware:
     name: Firmware

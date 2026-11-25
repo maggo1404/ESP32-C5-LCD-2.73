@@ -7,3 +7,4 @@ __pycache__/
 *.pyc
 .venv/
 firmware/components/its/test/build/
+firmware/main/test_battery/test_battery
