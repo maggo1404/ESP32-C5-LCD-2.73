@@ -14,7 +14,7 @@ GitHub Pages.
 | Extras | USB-Raw-Ausgabe (SLIP, kompatibel zu sl2mqtt3) und SD-Karten-Log (pcap, LINKTYPE 105) |
 | Gehäuse | Handgerät mit herausnehmbarem LiPo **503450 (1000 mAh, ca. 50×34×5 mm)** und integriertem **Lüftungsgitter-Clip** |
 | Gehäuse-Variante LiFePO4 | Zusätzlich `lifepo4_14500`: LiFePO4 14500 (AA-Format, ~600 mAh, mit PCM) längs im Fach, **internes Lademodul** (TP5000/CN3058, 3,6 V) hochkant hinter der Platine, Gehäuse 31,7 mm dick. Voraussetzung: **Onboard-Lader ETA6098 per Entfernen von L1 abschalten** (er lädt nach Annahme auf 4,2 V, nicht per Widerstand programmierbar). Das Modul wird aus USB_5V (vor D1) gespeist – Lötstelle **nicht verifiziert**. Siehe `enclosure/README.md` |
-| Gehäuse-Variante ohne Akku | Zusätzlich `none` (Ausgabe `export/usb/`, Viewer „Nur USB“): nur USB-C-Versorgung, **kein Akkufach/Deckel**, geschlossene Rückseite (Boden 3,9 mm wegen der Clip-Nuten), **16,1 mm dick**, J1 bleibt leer. Siehe `enclosure/README.md` |
+| Gehäuse-Variante ohne Akku | Zusätzlich `none` (Ausgabe `export/usb/`, Viewer „Nur USB“): nur USB-C-Versorgung, **kein Akkufach/Deckel**, geschlossene Rückseite (Boden 4,1 mm wegen der Clip-Nuten), **16,3 mm dick**, J1 bleibt leer. Siehe `enclosure/README.md` |
 | Branch | `main` (Default, Pages-Deploy) und `claude/admiring-bohr-ybe4c1` |
 | Lizenz | GPL-3.0-or-later (Decoder-Logik ist angelehnt an cits-to-go, GPL-3.0) |
 

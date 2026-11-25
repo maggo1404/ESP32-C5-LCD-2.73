@@ -48,8 +48,8 @@ idf.py set-target esp32c5
 idf.py build flash
 ```
 
-**Gehäuse drucken:** `enclosure/export/lipo/print_plate.3mf` (LiPo 503450) `enclosure/export/lifepo4/print_plate.3mf`
-(LiFePO4 14500, internes Lademodul) oder `enclosure/export/usb/print_plate.3mf` (nur USB-C, ohne Akku, 16,1 mm dick) in den Slicer laden (PETG/ASA – im Auto wird es heiß).
+**Gehäuse drucken:** `enclosure/export/lipo/print_plate.3mf` (LiPo 503450), `enclosure/export/lifepo4/print_plate.3mf`
+(LiFePO4 14500, internes Lademodul) oder `enclosure/export/usb/print_plate.3mf` (nur USB-C, ohne Akku, 16,3 mm dick) in den Slicer laden (PETG/ASA – im Auto wird es heiß).
 Vorher die Dicken nachmessen, siehe [enclosure/README.md](enclosure/README.md).
 
 ## Wichtige Hinweise
@@ -67,7 +67,7 @@ Vorher die Dicken nachmessen, siehe [enclosure/README.md](enclosure/README.md).
   **Niemals eine LiFePO4-Zelle an ein unverändertes Board mit USB anschließen** – der Onboard-Lader lädt auf 4,2 V
   (Überladung, Brandgefahr). Anleitung, Prüfschritte und offene Annahmen (Lage des 5-V-Abgriffs, Modulmaße, J1-Polarität):
   [enclosure/README.md#lifepo4-variante](enclosure/README.md#lifepo4-variante).
-- **Variante ohne Akku (nur USB-C):** Gehäuse `none` (`export/usb/`) für Dauerbetrieb an Powerbank oder Auto-USB – kein Akkufach, 16,1 mm dick,
+- **Variante ohne Akku (nur USB-C):** Gehäuse `none` (`export/usb/`) für Dauerbetrieb an Powerbank oder Auto-USB – kein Akkufach, 16,3 mm dick,
   keine Hitzeprobleme durch Akkus. Der Akku-Anschluss J1 bleibt unbestückt. Siehe
   [enclosure/README.md#variante-ohne-akku-nur-usb-c](enclosure/README.md#variante-ohne-akku-nur-usb-c).
 - Nur Empfang – das Gerät sendet nichts.

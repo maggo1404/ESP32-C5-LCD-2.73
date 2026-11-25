@@ -6,7 +6,7 @@ Handgerät mit **herausnehmbarem Akku** (oder ganz ohne Akku) und **Lüftungsgit
 |---|---|---|---|---|
 | **LiPo** (`lipo_503450`, Standard) | LiPo 503450, flach | Onboard-Lader des Boards (ETA6098) | 22,3 mm | `export/lipo/` |
 | **LiFePO4** (`lifepo4_14500`) | LiFePO4 14500 (AA-Format), hitzefest | **internes Lademodul (3,6 V)**, Onboard-Lader per Rework abgeschaltet | 31,7 mm | `export/lifepo4/` |
-| **Nur USB** (`none`) | **keiner** – Versorgung nur über USB-C | – (J1 bleibt leer) | **16,1 mm** | `export/usb/` |
+| **Nur USB** (`none`) | **keiner** – Versorgung nur über USB-C | – (J1 bleibt leer) | **16,3 mm** | `export/usb/` |
 
 > **Achtung LiFePO4-Variante:** Sie funktioniert nur mit einem Eingriff am Board (Bauteil **L1** entfernen). **Niemals** eine
 > LiFePO4-Zelle an ein unverändertes Board mit USB-Kabel anschließen – der Onboard-Lader würde sie auf 4,2 V laden
@@ -287,30 +287,30 @@ und keinen Kabelschlitz**; die Rückseite ist ein **geschlossener Boden** des K�
 
 | Teil | Hinweis |
 |---|---|
-| **Kein Akku** | Der Akku-Anschluss **J1** am Board bleibt **unbestückt (leer)** – empfohlen. Der Onboard-Lader (ETA6098) hat dann nichts zu laden – das ist unkritisch und braucht keinen Eingriff am Board (**nicht am Gerät verifiziert**; fällt am BAT-Anschluss ein Ladestatus/Fehler auf, den Lader wie in der LiFePO4-Variante per Entfernen von L1 abschalten). J1 ist durch den massiven Boden abgedeckt. |
+| **Kein Akku** | Der Akku-Anschluss **J1** am Board bleibt **unbestückt (leer)** – empfohlen. Der Onboard-Lader (ETA6098) hat dann nichts zu laden; sein Verhalten ohne Zelle ist **nicht verifiziert** (fällt am BAT-Anschluss ein Ladestatus/Fehler auf, den Lader wie in der LiFePO4-Variante per Entfernen von L1 abschalten). J1 ist durch den massiven Boden abgedeckt. |
 | USB-C-Kabel (Daten **und** Strom) | Fenster 14 × 8 mm für den Stecker-Overmold (`USB_PLUG_W/H`), auch für leicht abgewinkelte Stecker; Netzteil/Powerbank mit ≥ 5 V / 500 mA |
 | 4× M2×8 Senkkopfschrauben, ca. 250 mm Schaumstoff-Dichtband (0,8–1,0 mm) | wie bei den anderen Varianten |
 
-Kein Akku-Warnhinweis nötig – aber: ohne Akku bootet das Gerät erst, wenn USB 5 V liefert; bei kurzen Spannungseinbrüchen (Anlassen im Auto) startet es neu.
+**Firmware-Einstellung:** Unter *Einstellungen › Akku* **„Kein Akku (USB)“** wählen, damit das Display keine falsche Akku-Prozentanzeige zeigt; die **Auto-Abschaltung bleibt aus**. Ohne Akku bootet das Gerät erst, wenn USB 5 V liefert; bei kurzen Spannungseinbrüchen (Anlassen im Auto) startet es neu.
 
 ### Konstruktion und Dicke
 
-* **Dicke 16,1 mm** (LiPo 22,3 / LiFePO4 31,7). Stapel von hinten: **Boden 3,9** (Rückseite massiv), Bauteilraum 4,3 (Bauteile 4,0 + 0,3 Luft),
-  Platine 1,6, LCD 4,0, 0,5 Luft (Dichtband), Frontrahmen 1,8. Mit Clip +18,2 mm nach hinten (gesamt 34,3 mm).
-* **Warum 3,9 mm Boden:** Die Schwalbenschwanz-Nuten für den Clip sind 2,8 mm tief (von hinten in den Boden gefräst); darüber müssen ≥ 1,0 mm Material
-  bleiben (1,1 mm), über der Rastmulde (Kugel Ø2, bis z = 3,5) ≥ 0,4 mm (0,4 mm). Ein dünnerer Boden wäre nur mit flacheren Nuten möglich
+* **Dicke 16,3 mm** (LiPo 22,3 / LiFePO4 31,7). Stapel von hinten: **Boden 4,1** (Rückseite massiv), Bauteilraum 4,3 (Bauteile 4,0 + 0,3 Luft),
+  Platine 1,6, LCD 4,0, 0,5 Luft (Dichtband), Frontrahmen 1,8. Mit Clip +18,2 mm nach hinten (gesamt 34,5 mm).
+* **Warum 4,1 mm Boden:** Die Schwalbenschwanz-Nuten für den Clip sind 2,8 mm tief (von hinten in den Boden gefräst); darüber müssen ≥ 1,0 mm Material
+  bleiben (1,3 mm), über der Rastmulde (Kugel Ø2, bis z = 3,5) ≥ 0,6 mm (0,6 mm). Ein dünnerer Boden wäre nur mit flacheren Nuten möglich
   (Parameter `NOBAT_FLOOR`, `DT_DEPTH`). Der Boden ist **massiv** (kein Rippenraster, keine Brücken über Hohlräume); nur die Nuten
-  (Breite ≈ 9–11 mm) und die Antennen-Aussparung (nur 1,5 mm Boden über der PCB-Antenne, X −24…−4, Y 25,5…34) sind von hinten offen.
+  (Breite 9 mm an der Öffnung, 11,8 mm am Grund) und die Antennen-Aussparung (nur 1,5 mm Boden über der PCB-Antenne, X −24…−4, Y 25,5…34) sind von hinten offen.
 * **Unverändert** gegenüber LiPo: Platinentasche mit 4 Standoffs und Zentrierzapfen, Dichtband-Spalt 0,5 mm, 4 Eckschrauben, USB-C-Fenster, TF-Slot mit
   Fingermulde, Seitentaster-Biegezungen, Antennen-Freihaltung, Vent-Clip (Hoch- und Querformat, mit Rastmulde).
-* Gerätemasse für die Clip-Abschätzung ca. **85 g** (Sicherheit Rutschen ≈ 4,3, Kippen ≈ 3,7; Papierwert, im Auto testen).
-* Keine Lüftungsschlitze (optional, nicht umgesetzt). Eine Zugentlastung/Kabelbinder-Öse am USB-C-Fenster ist **nicht** umgesetzt (die Wand ist dort nur 4,7 mm dick;
-  stattdessen Stecker mit kurzem Overmold oder Kabel am Clip führen).
+* Gerätemasse für die Clip-Abschätzung ca. **85 g** (konservativ angesetzt, das echte Gerät ist leichter; Sicherheit Rutschen ≈ 4,3, Kippen ≈ 3,7; Papierwert, im Auto testen).
+* Keine Lüftungsschlitze (optional, nicht umgesetzt). Eine Zugentlastung/Kabelbinder-Öse am USB-C-Fenster ist **nicht** umgesetzt (die Wand ist dort nur 4,7 mm dick).
+* **Kabel fixieren:** USB-C-Kabel z. B. mit einem Kabelbinder an der Lüftungslamelle oder am Clip festsetzen, damit Kabelzug weder die 4,7 mm dicke USB-Wand belastet noch das Gerät von der Lüftung zieht.
 
 ### Druck (nur USB)
 
-PETG/ASA, 0,2 mm, 3–4 Perimeter, keine Stützen: **Körper** Rückseite nach unten (die Nuten sind nach unten offene Kanäle mit ≤ 11 mm Deckenbrücke, die Boden-Decke
-über den Nuten ist 1,1 mm dick – Brückeneinstellungen: langsam, viel Lüfter), **Rahmen** Vorderseite nach unten, **Clip** auf der Seite (100 % Infill).
+PETG/ASA, 0,2 mm, 3–4 Perimeter, keine Stützen: **Körper** Rückseite nach unten (die Nuten sind nach unten offene Kanäle mit ≤ 11,8 mm Deckenbrücke, die Boden-Decke
+über den Nuten ist 1,3 mm dick – Brückeneinstellungen: langsam, viel Lüfter), **Rahmen** Vorderseite nach unten, **Clip** auf der Seite (100 % Infill).
 `export/usb/print_plate.3mf` enthält alle drei Teile (alle Brückenspannweiten ≤ 20 mm, im Check-Report geprüft).
 
 ### Zusammenbau (nur USB)

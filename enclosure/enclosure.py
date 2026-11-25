@@ -142,8 +142,8 @@ BAT_STRUTS = _B["struts"]   # Opfer-Stege im Akkufach (nur im Druckteil) tragen 
 FLOOR_T = 1.5           # Trennboden Bauteilraum / Akkufach
 # --- Variante ohne Akku: Rueckseite = massiver Boden Z 0..Z_FLOOR_TOP ---
 # Die Schwalbenschwanz-Nuten reichen bis z = DT_DEPTH (2,8); darueber muessen >= 1,0 mm Material bleiben, ausserdem ueber
-# der Rastmulde (Kugel O2 bei z = DT_TIP, Oberkante 3,5) >= 0,4 mm -> Boden 3,9 mm (bei Akku liegt dort das Fach/Rippenband).
-NOBAT_FLOOR = 3.9
+# der Rastmulde (Kugel O2 bei z = DT_TIP, Oberkante 3,5) >= 0,6 mm -> Boden 4,1 mm (bei Akku liegt dort das Fach/Rippenband).
+NOBAT_FLOOR = 4.1
 # --- Anschluesse (Rueckansicht -> Modell umgerechnet) ---
 USB_X = -0.7            # bitte nachmessen
 USB_PLUG_W, USB_PLUG_H = 14.0, 8.0      # Stecker-Overmold
@@ -850,7 +850,7 @@ def run_nobat_probes(body, bezel, dummy, clip_asm, asm_parts, inside, probe, log
           and inside(body, CLIP_CX + xs, CLIP_CY + 8.0, DT_DEPTH + 0.5) and inside(body, CLIP_CX + xs + 8.0, CLIP_CY + xs, DT_DEPTH + 0.5)
           and inside(body, CLIP_CX + xs, CLIP_CY + xs, Z_FLOOR_TOP - 0.2))
     over_d = Z_FLOOR_TOP - (DT_TIP + 1.0)
-    probe(f"Material ueber der Rastmulde {over_d:.2f} mm >= 0,3", over_d >= 0.3 - 1e-9
+    probe(f"Material ueber der Rastmulde {over_d:.2f} mm >= 0,6", over_d >= 0.6 - 1e-9
           and inside(body, CLIP_CX + xs, CLIP_CY + DETENT_Y, Z_FLOOR_TOP - 0.2))
     probe("Nuten reichen in die Aussenwand (Oeffnung am Rand, Tiefe bis z=DT_DEPTH)",
           not inside(body, CLIP_CX + xs, OUTER / 2 - 0.5, DT_DEPTH - 0.3) and not inside(body, -OUTER / 2 + 0.5, CLIP_CY + xs, DT_DEPTH - 0.3)

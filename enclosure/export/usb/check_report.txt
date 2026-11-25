@@ -1,11 +1,11 @@
 == Variante: Nur USB-C (ohne Akku) (none) -> export/usb/ ==
 == Parameter/Stack ==
-Aussenmass Koerper/Rahmen: 78.0 x 78.0 mm, Gesamtdicke ohne Clip: 16.10 mm (mit Clip +18.2, gesamt 34.3 mm)
-Z: Fach 0..2.40, Boden bis 3.90, Platine 8.20..9.80, LCD bis 13.80, Koerper-Oberkante 14.30, Rahmen bis 16.10
+Aussenmass Koerper/Rahmen: 78.0 x 78.0 mm, Gesamtdicke ohne Clip: 16.30 mm (mit Clip +18.2, gesamt 34.5 mm)
+Z: Fach 0..2.60, Boden bis 4.10, Platine 8.40..10.00, LCD bis 14.00, Koerper-Oberkante 14.50, Rahmen bis 16.30
 Schraube: M2 Senkkopf in den Ecken, Rahmen 1.8 + Bohrung 8.0 -> M2x8 (selbstschneidend)
 Schrauben-Mitte +-35.8, Abstand Bohrungsrand zur Platinentasche: 2.59 mm
 == Gueltigkeit ==
-body          valid=True solids=1 vol=  33674.2 mm3 bbox=(78.0 x 78.0 x 14.3)
+body          valid=True solids=1 vol=  34854.2 mm3 bbox=(78.0 x 78.0 x 14.5)
 front_bezel   valid=True solids=1 vol=   6127.2 mm3 bbox=(78.0 x 78.0 x 1.8)
 vent_clip     valid=True solids=1 vol=   2536.8 mm3 bbox=(12.0 x 28.0 x 21.4)
 board_dummy   valid=True solids=1 vol=  43769.8 mm3 bbox=(68.0 x 68.8 x 9.6)
@@ -17,7 +17,7 @@ front_bezel   x vent_clip        0.000 mm3 OK
 front_bezel   x board_dummy      0.000 mm3 OK
 vent_clip     x board_dummy      0.000 mm3 OK
 == Druckplatte ==
-body          x    6.0..  84.0 y    6.0..  84.0 z 0..14.3
+body          x    6.0..  84.0 y    6.0..  84.0 z 0..14.5
 front_bezel   x   91.0.. 169.0 y    6.0..  84.0 z 0..1.8
 vent_clip     x  119.3.. 140.7 y  106.0.. 134.0 z 0..12.0
 == Funktions-Probes ==
@@ -26,13 +26,13 @@ Nut Querformat endet am Anschlag (Wand dahinter)                       OK
 Nut Hochformat frei von oberer Aussenkante bis Anschlag                OK
 == Ohne Akku (nur USB-C): geschlossene Rueckseite ==
 Kein Akkudeckel / keine Akku-Teile in der Baugruppe                    OK
-Gesamtdicke 16.1 mm <= 16,5 (LiPo: 22,3)                               OK
+Gesamtdicke 16.3 mm <= 16,5 (LiPo: 22,3)                               OK
 Rueckseite geschlossen (z=0,3): 236 offene Rasterpunkte nur in Nuten/Antennenzone OK
 BAT-Stecker J1 (X -22,6, Y -17) ueberdeckt: Boden massiv, kein Kabelschlitz OK
-Material ueber den Nuten 1.10 mm >= 1,0                                OK
-Material ueber der Rastmulde 0.40 mm >= 0,3                            OK
+Material ueber den Nuten 1.30 mm >= 1,0                                OK
+Material ueber der Rastmulde 0.60 mm >= 0,6                            OK
 Nuten reichen in die Aussenwand (Oeffnung am Rand, Tiefe bis z=DT_DEPTH) OK
-Standoff-Fuss im Boden verankert (Boden 3.9 mm)                        OK
+Standoff-Fuss im Boden verankert (Boden 4.1 mm)                        OK
 Boden hinter dem USB-C-Fenster geschlossen (z < Fensterunterkante)     OK
 Clip-Haltesicherheit gegen Rutschen 4.3 >= 3                           OK
 Clip-Haltesicherheit gegen Kippen 3.7 >= 2                             OK
