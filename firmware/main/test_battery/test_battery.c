@@ -2,6 +2,7 @@
  * Host test for battery.c. Build/run: make -C firmware/main/test_battery */
 #include <math.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "../battery.h"
 
@@ -135,6 +136,19 @@ int main(void)
         CHECK(!battery_guard_poll(&g, false, BATTERY_LIFEPO4, 3.00f, t));
     CHECK(!battery_guard_poll(&g, true, BATTERY_LIFEPO4, 3.00f, 6 * H)); /* starts fresh */
     CHECK(battery_guard_poll(&g, true, BATTERY_LIFEPO4, 3.00f, 7 * H));
+
+    /* BATTERY_NONE (USB-only): no percentage, never triggers, has a name */
+    CHECK(BATTERY_NONE == 2 && BATTERY_TYPE_COUNT == 3);
+    CHECK(board_battery_percent(BATTERY_NONE, 3.85f) == -1);
+    CHECK(board_battery_percent(BATTERY_NONE, 4.2f) == -1);
+    CHECK(strcmp(battery_type_name(BATTERY_NONE), "Kein Akku (USB)") == 0);
+    CHECK(strcmp(battery_type_name(BATTERY_LIPO), "LiPo") == 0);
+    CHECK(strcmp(battery_type_name(BATTERY_LIFEPO4), "LiFePO4") == 0);
+    battery_guard_init(&g);
+    for (int64_t t = 0; t <= 5 * H; t += 1000) {
+        CHECK(!battery_guard_poll(&g, true, BATTERY_NONE, 3.00f, t));
+        CHECK(!battery_guard_poll(&g, true, BATTERY_NONE, -1.0f, t));
+    }
 
     if (fails) {
         printf("%d check(s) failed\n", fails);

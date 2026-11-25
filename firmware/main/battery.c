@@ -19,11 +19,14 @@ static const pt_t LIFEPO4[] = {
 
 bool battery_present(float volts) { return isfinite(volts) && volts >= BATTERY_ABSENT_VOLTS; }
 
-const char *battery_type_name(int type) { return type == BATTERY_LIFEPO4 ? "LiFePO4" : "LiPo"; }
+const char *battery_type_name(int type)
+{
+    return type == BATTERY_LIFEPO4 ? "LiFePO4" : type == BATTERY_NONE ? "Kein Akku (USB)" : "LiPo";
+}
 
 int board_battery_percent(int type, float volts)
 {
-    if (!battery_present(volts)) {
+    if (type == BATTERY_NONE || !battery_present(volts)) {
         return -1;
     }
     const pt_t *t = type == BATTERY_LIFEPO4 ? LIFEPO4 : LIPO;
@@ -100,7 +103,7 @@ bool battery_guard_update(battery_guard_t *g, int type, float volts, int64_t now
 
 bool battery_guard_poll(battery_guard_t *g, bool enabled, int type, float volts, int64_t now_ms)
 {
-    if (!enabled) {
+    if (!enabled || type == BATTERY_NONE) {
         battery_guard_init(g);
         return false;
     }

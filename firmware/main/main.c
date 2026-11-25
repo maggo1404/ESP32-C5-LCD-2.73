@@ -180,7 +180,8 @@ static void battery_guard_task(void *arg)
     for (;;) {
         vTaskDelay(pdMS_TO_TICKS(1000));
         settings_t cfg = settings_get();
-        float v = board_battery_volts(); /* cached, refreshed every 3 s */
+        /* no I2C/ADC traffic for the USB-only type */
+        float v = cfg.battery_type == BATTERY_NONE ? -1.0f : board_battery_volts(); /* cached, 3 s */
         if (battery_guard_poll(&g, cfg.auto_off, cfg.battery_type, v, esp_timer_get_time() / 1000)) {
             break;
         }

@@ -522,16 +522,18 @@ static void update_status(void)
         snprintf(usbtxt, sizeof(usbtxt), "%s, %u Pakete", usb_out_connected() ? "verbunden" : "kein Host",
                  (unsigned)rs.usb_frames);
     }
-    float v = board_battery_volts();
-    if (battery_present(v)) {
+    float v = cfg.battery_type == BATTERY_NONE ? -1.0f : board_battery_volts();
+    if (cfg.battery_type == BATTERY_NONE) {
+        snprintf(bat, sizeof(bat), "Versorgung: USB (kein Akku)");
+    } else if (battery_present(v)) {
         if (battery_reading_ambiguous(v)) {
-            snprintf(bat, sizeof(bat), "%s <=3.35 V (Messung ungenau)", battery_type_name(cfg.battery_type));
+            snprintf(bat, sizeof(bat), "Akku: %s <=3.35 V (Messung ungenau)", battery_type_name(cfg.battery_type));
         } else {
-            snprintf(bat, sizeof(bat), "%s %.2f V %d %%", battery_type_name(cfg.battery_type), (double)v,
+            snprintf(bat, sizeof(bat), "Akku: %s %.2f V %d %%", battery_type_name(cfg.battery_type), (double)v,
                      board_battery_percent(cfg.battery_type, v));
         }
     } else {
-        snprintf(bat, sizeof(bat), "%s: kein Akku", battery_type_name(cfg.battery_type));
+        snprintf(bat, sizeof(bat), "Akku: %s: kein Akku", battery_type_name(cfg.battery_type));
     }
 
     uint32_t known = S.per_msg[ITS_MSG_CAM] + S.per_msg[ITS_MSG_DENM] + S.per_msg[ITS_MSG_MAPEM] +
@@ -547,7 +549,7 @@ static void update_status(void)
              "Kanal: %u MHz%s\n"
              "SD: %s%s\n"
              "USB: %s\n"
-             "Akku: %s   Laufzeit: %s\n"
+             "%s   Laufzeit: %s\n"
              "Verworfen: %u   Heap: %u kB",
              (unsigned)S.total, (double)S.rate, (unsigned)S.its, (unsigned)S.secured, (unsigned)S.errors,
              (unsigned)S.per_msg[ITS_MSG_CAM], (unsigned)S.per_msg[ITS_MSG_DENM], (unsigned)S.per_msg[ITS_MSG_MAPEM],
@@ -796,8 +798,11 @@ static void update_topbar(void)
     else if (sd.state == SD_LOG_NO_CARD) sc = sd.error ? C_ERR : C_WARN;
     set_color(s_bar_sd, sc);
 
-    float v = board_battery_volts();
-    if (battery_present(v)) {
+    float v = cfg.battery_type == BATTERY_NONE ? -1.0f : board_battery_volts();
+    if (cfg.battery_type == BATTERY_NONE) {
+        snprintf(b, sizeof(b), LV_SYMBOL_USB);
+        set_color(s_bar_bat, C_TEXT);
+    } else if (battery_present(v)) {
         int pct = board_battery_percent(cfg.battery_type, v);
         const char *sym = pct >= 80 ? LV_SYMBOL_BATTERY_FULL : pct >= 55 ? LV_SYMBOL_BATTERY_3
                         : pct >= 30 ? LV_SYMBOL_BATTERY_2 : pct >= 10 ? LV_SYMBOL_BATTERY_1 : LV_SYMBOL_BATTERY_EMPTY;

@@ -10,6 +10,7 @@
 typedef enum {
     BATTERY_LIPO = 0,    /* 1S LiPo / Li-Ion, 4.20 V full */
     BATTERY_LIFEPO4 = 1, /* 1S LiFePO4, 3.40 V resting "full" for a 3.6 V charger */
+    BATTERY_NONE = 2,    /* USB-only build, no cell fitted: no measurement, no guard */
     BATTERY_TYPE_COUNT
 } battery_type_t;
 
@@ -19,7 +20,7 @@ typedef enum {
 #define BATTERY_ABSENT_VOLTS 2.0f
 bool battery_present(float volts);
 
-/* Display name: "LiPo" / "LiFePO4" (invalid type -> "LiPo"). */
+/* Display name: "LiPo" / "LiFePO4" / "Kein Akku (USB)" (invalid type -> "LiPo"). */
 const char *battery_type_name(int type);
 
 /* Approximate state of charge 0..100 % from the (resting) cell voltage, by

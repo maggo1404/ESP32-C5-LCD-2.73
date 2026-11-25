@@ -178,7 +178,7 @@ rot = Fehler), Akku in Prozent mit Symbol (gelb/rot nach Akkutyp).
 
 ### Akkutyp (LiPo / LiFePO4)
 
-*Einstellungen > Akku* wählt den Typ (Standard LiPo, in NVS gespeichert; Standard per
+*Einstellungen > Akku* wählt den Typ (LiPo, LiFePO4 oder *Kein Akku (USB)*; Standard LiPo, in NVS gespeichert; Standard per
 `DEFAULT_BATTERY_TYPE` in `main/app_config.h`). Der Typ bestimmt Prozentkurve, Warnschwellen und
 Abschaltung (`main/battery.c`):
 
@@ -192,8 +192,14 @@ Abschaltung (`main/battery.c`):
 Die Kurven sind allgemeine Näherungen der Ruhespannung (unter Last liegt die Spannung niedriger,
 die LiFePO4-Kurve ist sehr flach) und nicht an dieser Hardware gemessen.
 
+**Kein Akku (USB)** (`BATTERY_NONE`, Wert 2) ist für das USB-only-Gehäuse (kein Akku, J1 unbestückt)
+gedacht: kein ADC-/I2C-Zugriff für die Messung, keine Prozentanzeige (Statusleiste zeigt das
+USB-Symbol, Statusseite *Versorgung: USB (kein Akku)*) und die Auto-Abschaltung ist wirkungslos.
+Das verhindert eine falsche Prozentanzeige durch das schwebende bzw. vom Lader getriebene BAT-Netz.
+Ungültige NVS-Werte (> 2) werden verworfen, es gilt der Build-Standard.
+
 **Standardtyp pro Build:** `CONFIG_ITS_DEFAULT_BATTERY_TYPE` (Kconfig-Menü *ITS-G5 Display*,
-`idf.py menuconfig`, oder `CONFIG_ITS_DEFAULT_BATTERY_TYPE=1` in einer `sdkconfig.defaults`).
+`idf.py menuconfig`, oder `CONFIG_ITS_DEFAULT_BATTERY_TYPE=1` (bzw. `=2` für USB-only) in einer `sdkconfig.defaults`).
 Ein in NVS gespeicherter Wert gewinnt. Bei LiFePO4-Aufbauten zuerst *Einstellungen > Akku* auf
 LiFePO4 stellen, sonst zeigt das Gerät die LiPo-Kurve und warnt falsch.
 

@@ -8,7 +8,7 @@ typedef struct {
     bool     sd_log;       /* write pcap to SD card */
     bool     usb_out;      /* SLIP raw frames on USB-Serial-JTAG */
     uint8_t  brightness;   /* 10..100 % */
-    uint8_t  battery_type; /* battery_type_t: 0 = LiPo, 1 = LiFePO4 */
+    uint8_t  battery_type; /* battery_type_t: 0 = LiPo, 1 = LiFePO4, 2 = none (USB) */
     bool     auto_off;     /* low-battery deep sleep (opt-in, default off) */
 } settings_t;
 
