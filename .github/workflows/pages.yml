@@ -27,17 +27,12 @@ jobs:
       - run: ctest --test-dir build-test --output-on-failure
       - run: make -C firmware/main/test_battery clean test
 
-  deploy:
-    name: Web-Flasher veroeffentlichen
+  site:
+    name: Seite zusammenstellen
     needs: [firmware, decoder-tests]
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -87,9 +82,22 @@ jobs:
           touch _site/.nojekyll
           find _site -type f | sort
 
-      - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
+
+  # Eigener Job (wie im offiziellen Pages-Starter-Workflow): deploy-pages direkt im selben Job
+  # wie upload-pages-artifact fand das Artefakt sporadisch nicht ("No artifacts named github-pages").
+  deploy:
+    name: Web-Flasher veroeffentlichen
+    needs: site
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - id: deployment
         uses: actions/deploy-pages@v4
