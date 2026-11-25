@@ -86,13 +86,25 @@ static void set_text(lv_obj_t *l, const char *t)
     }
 }
 
+/* Style setters always invalidate + refresh the object, even for an identical
+ * value, so every setter used by the 4 Hz refresh skips unchanged values. */
 static void set_color(lv_obj_t *l, lv_color_t c)
 {
+    if (lv_obj_get_style_text_color(l, LV_PART_MAIN).full == c.full) return;
     lv_obj_set_style_text_color(l, c, 0);
+}
+
+static void set_bg(lv_obj_t *o, lv_color_t c, lv_opa_t opa)
+{
+    if (lv_obj_get_style_bg_opa(o, LV_PART_MAIN) != opa) lv_obj_set_style_bg_opa(o, opa, 0);
+    if (opa != LV_OPA_TRANSP && lv_obj_get_style_bg_color(o, LV_PART_MAIN).full != c.full) {
+        lv_obj_set_style_bg_color(o, c, 0);
+    }
 }
 
 static void show(lv_obj_t *o, bool vis)
 {
+    if (vis != lv_obj_has_flag(o, LV_OBJ_FLAG_HIDDEN)) return; /* unchanged */
     if (vis) {
         lv_obj_clear_flag(o, LV_OBJ_FLAG_HIDDEN);
     } else {
@@ -132,7 +144,7 @@ static void table_create(table_t *t, lv_obj_t *parent, int ncols, const int *x, 
 static void table_row(table_t *t, int r, bool sel, bool visible)
 {
     show(t->row[r], visible);
-    lv_obj_set_style_bg_opa(t->row[r], sel ? LV_OPA_COVER : LV_OPA_TRANSP, 0);
+    set_bg(t->row[r], C_SEL, sel ? LV_OPA_COVER : LV_OPA_TRANSP);
 }
 
 /* keep `sel` inside the window [top, top+T_ROWS) */
@@ -815,15 +827,13 @@ static void update_chrome(void)
         lv_obj_t *lbl = lv_obj_get_child(s_tab[i], 0);
         bool cur = i == (int)s_page;
         if (cur && s_nav == NAV_TOP) {
-            lv_obj_set_style_bg_color(s_tab[i], C_ACCENT, 0);
-            lv_obj_set_style_bg_opa(s_tab[i], LV_OPA_COVER, 0);
+            set_bg(s_tab[i], C_ACCENT, LV_OPA_COVER);
             set_color(lbl, lv_color_hex(0x06121f));
         } else if (cur) {
-            lv_obj_set_style_bg_color(s_tab[i], C_SEL, 0);
-            lv_obj_set_style_bg_opa(s_tab[i], LV_OPA_COVER, 0);
+            set_bg(s_tab[i], C_SEL, LV_OPA_COVER);
             set_color(lbl, C_ACCENT);
         } else {
-            lv_obj_set_style_bg_opa(s_tab[i], LV_OPA_TRANSP, 0);
+            set_bg(s_tab[i], C_DIM, LV_OPA_TRANSP);
             set_color(lbl, C_DIM);
         }
     }

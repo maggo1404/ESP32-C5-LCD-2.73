@@ -11,10 +11,12 @@ idf_component_register(
         buttons.c
         ui.c
         ui_fonts.c
+        fonts/ui_font_montserrat_12.c
+        fonts/ui_font_montserrat_14.c
+        fonts/ui_font_montserrat_20.c
+        fonts/ui_font_montserrat_28.c
         ui_lights.c
     INCLUDE_DIRS "."
-    # embedded TTF -> `ttf_start`/`ttf_end` symbols (see ui_fonts.c)
-    EMBED_FILES "fonts/Montserrat-Medium.ttf"
     LDFRAGMENTS "linker.lf"
     REQUIRES
         its io_extension esp_lcd_ili9488

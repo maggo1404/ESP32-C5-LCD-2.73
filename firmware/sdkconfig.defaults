@@ -70,7 +70,7 @@ CONFIG_LV_FONT_MONTSERRAT_14=y
 CONFIG_LV_FONT_MONTSERRAT_20=y
 CONFIG_LV_FONT_MONTSERRAT_28=y
 CONFIG_LV_FONT_DEFAULT_MONTSERRAT_14=y
-# TTF with Latin-1 (umlauts) rendered at runtime, see main/fonts
-CONFIG_LV_USE_TINY_TTF=y
+# UI fonts are pre-rendered bitmap fonts in main/fonts (no TinyTTF)
+# CONFIG_LV_USE_TINY_TTF is not set
 CONFIG_LV_USE_PERF_MONITOR=n
 CONFIG_LV_USE_LOG=n

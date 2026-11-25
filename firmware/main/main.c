@@ -5,6 +5,7 @@
  */
 #include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "esp_heap_caps.h"
 #include "esp_log.h"
@@ -103,15 +104,49 @@ static const char *reset_reason_str(esp_reset_reason_t r)
              ##__VA_ARGS__, (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT),    \
              (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM))
 
-/* Once per 2 s for the first minute: stack headroom of the long-living tasks.
- * A task whose high-water mark approaches 0 is about to overflow. */
+/* RX statistics for the heartbeat: "rx cb=N acc=N ingest=N its=N sec=N err=N drop=pool/size top: CAM=N ..." */
+static int rx_stats_str(char *b, size_t sz)
+{
+    rx_stats_t rs;
+    rx_get_stats(&rs);
+    uint32_t per[ITS_MSG_COUNT];
+    its_store_lock();
+    const its_store_t *st = its_store_get();
+    const uint32_t its_frames = st->its_frames, secured = st->secured_frames, errs = st->decode_errors,
+                   total = st->total_frames;
+    memcpy(per, st->per_msg, sizeof(per));
+    its_store_unlock();
+    int n = snprintf(b, sz, "rx cb=%u acc=%u ingest=%u its=%u sec=%u err=%u drop=%u/%u top:", (unsigned)rs.cb_total,
+                     (unsigned)rs.accepted, (unsigned)total, (unsigned)its_frames, (unsigned)secured, (unsigned)errs,
+                     (unsigned)rs.drop_pool, (unsigned)rs.drop_size);
+    bool any = false;
+    for (int k = 0; k < 3; k++) { /* three most frequent message types */
+        int best = -1;
+        for (int i = 0; i < ITS_MSG_COUNT; i++) {
+            if (per[i] && (best < 0 || per[i] > per[best])) best = i;
+        }
+        if (best < 0 || n <= 0 || n >= (int)sz) break;
+        n += snprintf(b + n, sz - n, " %s=%u", its_msg_name((uint8_t)best), (unsigned)per[best]);
+        per[best] = 0;
+        any = true;
+    }
+    if (!any && n > 0 && n < (int)sz) n += snprintf(b + n, sz - n, " -");
+    return n;
+}
+
+/* Heartbeat, never returns: every 2 s for the first minute (stack headroom of
+ * the long-living tasks: a high-water mark approaching 0 means imminent
+ * overflow), then every 10 s. Each beat also logs the RX counters. */
 static void diag_heartbeat(void)
 {
     static const char *const names[] = {"main", "lvgl", "its_worker", "sd_log", "buttons", "Tmr Svc", "esp_timer"};
-    for (int round = 0; round < 30; round++) {
-        vTaskDelay(pdMS_TO_TICKS(2000));
-        char b[160];
-        int n = snprintf(b, sizeof(b), "alive %ds, free int %u (min %u) psram %u; stack min free:", (round + 1) * 2,
+    const int64_t t0 = esp_timer_get_time();
+    for (;;) {
+        const bool fast = (esp_timer_get_time() - t0) < 60LL * 1000000;
+        vTaskDelay(pdMS_TO_TICKS(fast ? 2000 : 10000));
+        char b[200];
+        int n = snprintf(b, sizeof(b), "alive %ds, free int %u (min %u) psram %u; stack min free:",
+                         (int)((esp_timer_get_time() - t0) / 1000000),
                          (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT),
                          (unsigned)heap_caps_get_minimum_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT),
                          (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
@@ -122,6 +157,9 @@ static void diag_heartbeat(void)
             }
         }
         ESP_LOGI(TAG, "%s", b);
+        char r[200];
+        rx_stats_str(r, sizeof(r));
+        ESP_LOGI(TAG, "%s", r);
     }
 }
 

@@ -252,7 +252,7 @@ und 5920 MHz; die Umschaltung erfolgt nach dem Bestätigen (ENTER) im Worker-Tas
 * LVGL 8.4 läuft in einem einzigen Task, nur dieser ruft LVGL auf. Die UI kopiert die benötigten
   Teile des Stores unter dem Store-Lock in statische Snapshots (kurze Sperrzeit) und aktualisiert
   alle 250 ms.
-* Schrift: Montserrat (Latin-1, Umlaute/ß) per TinyTTF aus dem Image (`main/fonts`, OFL).
+* Schrift: Montserrat (Latin-1, Umlaute/ß) als vorgerenderte Bitmap-Fonts (`main/fonts`, `gen_fonts.sh`, OFL), kein TinyTTF.
 
 ## Nicht auf echter Hardware geprüft
 

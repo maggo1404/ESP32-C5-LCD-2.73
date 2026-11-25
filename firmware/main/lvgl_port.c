@@ -84,6 +84,7 @@ static void lvgl_task(void *arg)
     }
 
     for (;;) {
+        /* always block >= 5 ms so IDLE (task watchdog) and lower tasks run */
         uint32_t wait = lv_timer_handler();
         if (wait < 5) wait = 5;
         if (wait > 30) wait = 30;
@@ -94,6 +95,6 @@ static void lvgl_task(void *arg)
 esp_err_t lvgl_port_start(lvgl_port_ui_init_cb_t ui_init)
 {
     s_ui_init = ui_init;
-    BaseType_t ok = xTaskCreate(lvgl_task, "lvgl", 10 * 1024, NULL, 4, NULL);
+    BaseType_t ok = xTaskCreate(lvgl_task, "lvgl", 10 * 1024, NULL, 3, NULL);
     return ok == pdPASS ? ESP_OK : ESP_ERR_NO_MEM;
 }
