@@ -268,3 +268,19 @@ verwendet wird `sig_len - 4`, ersatzweise begrenzt durch `dump_len`, OpenTraffic
 Farbwiedergabe/Byte-Reihenfolge des Displays, SPI-Takt 40 MHz, Akku-ADC-Skalierung (Faktor 3 und 12 Bit laut
 Waveshare-Demo, 10-Bit-ADC des CH32V003; Kalibrierung siehe Akkutyp), Akkukurven und Abschaltung am Board, IO-Expander-Pin 5 (USB/CAN-Auswahl, wird beim Start auf 0 = USB gesetzt), SD-Hotplug, USB-SLIP-Durchsatz
 und der RAM-Bedarf zur Laufzeit.
+
+## Diagnose: erste Bytes empfangener Frames
+
+Mit `CONFIG_ITS_RX_DIAG=y` (Standard) schreibt die Firmware für empfangene Frames die ersten 32 Byte als Hex ins Log
+(höchstens 20 Zeilen pro 10 s):
+
+* `diag verworfen (<Grund>) typ=… rx_state=… len=… rssi=…: <hex>` – vom Empfänger verworfene Frames
+  (Grund: `MISC`, `RX-Fehler`, `zu kurz`, `kein Broadcast`). `typ` ist `wifi_promiscuous_pkt_type_t`
+  (0 = Management, 1 = Control, 2 = Data, 3 = MISC).
+* `diag ITS <Typ> station=… btp=… [signiert] len=… rssi=…: <hex>` – angenommener Broadcast, als ITS erkannt.
+* `diag Broadcast, kein ITS (parse=<Fehler>) …` – angenommener Broadcast ohne GeoNetworking
+  (`parse=2` = LLC/SNAP-Ethertype ist nicht 0x8947).
+
+Ein ITS-G5-Frame beginnt typischerweise mit `88 00` (QoS-Data) oder `08 00` (Data), danach `ff ff ff ff ff ff`
+(Ziel: Broadcast); ab Byte 24/26 folgt `aa aa 03 00 00 00 89 47` (LLC/SNAP + GeoNetworking).
+Abschalten: `idf.py menuconfig` → *ITS-G5 Display* → *Log first bytes …*.

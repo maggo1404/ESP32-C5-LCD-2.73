@@ -11,4 +11,14 @@ menu "ITS-G5 Display"
             `idf.py menuconfig` (ITS-G5 Display) or by adding
             CONFIG_ITS_DEFAULT_BATTERY_TYPE=1 to a sdkconfig.defaults file.
 
+    config ITS_RX_DIAG
+        bool "Log first bytes of received 802.11p frames (diagnosis)"
+        default y
+        help
+            Prints the first 32 bytes of every received frame to the log:
+            frames the receiver rejects (MISC, RX error, not broadcast) and
+            accepted broadcast frames together with the ITS parse result
+            (message type, station id, signed). Rate-limited to 20 lines per
+            10 s. Useful while bringing up reception; disable for quiet logs.
+
 endmenu
