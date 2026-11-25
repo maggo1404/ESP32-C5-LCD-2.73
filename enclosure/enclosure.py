@@ -116,12 +116,15 @@ WIRE_D = 2.0            # Tiefe der Kabelrinne in der Fachwand
 # --- Lademodul (nur CHARGER): TP5000 (auf 3,6 V / LiFePO4 gestellt) oder CN3058E, typ. Platine ---
 CHARGER_L, CHARGER_W, CHARGER_H = 26.0, 17.0, 4.0   # ANNAHME, bitte nachmessen: Laenge x Breite x Hoehe (Bauteile)
 CHARGER_Y_C = -4.6      # Mitte des Modul-Schachts in Y (stehend, Platine in der XZ-Ebene)
-CH_CLR_L, CH_CLR_T, CH_CLR_W = 1.4, 0.6, 0.3   # Spiel Laenge gesamt / Dicke gesamt / Breite gesamt
+CH_CLR_L, CH_CLR_T, CH_CLR_W = 1.9, 0.6, 0.3   # Spiel Laenge gesamt / Dicke gesamt / Breite gesamt
 LID_T = 1.8             # Modul-/Kabeldeckel (buendig in Falz, 2x M2 Senkkopf)
 LID_GROOVE = 0.8        # Rille im Deckel fuer die Modulunterkante
 RIB_U_T, RIB_U_L = 1.4, 6.0    # Fuehrungsrippen (am Deckel) Dicke / Laenge
 RIB_U_H = 14.0
 CH_SLIT_UP = 0.3        # Schlitz fuer die Modul-Oberkante in der Fachdecke (Rest Boden >= 0,8)
+CHARGE_SWITCH = True    # Schiebeschalter (z. B. SS12D00) in der IN+-Leitung des Lademoduls: Laden von Hand abschalten (kein NTC!)
+SW_W, SW_H = 8.5, 3.5   # Fenster in der linken Seitenwand (Y x Z) fuer den Schalterhebel
+SW_Y, SW_Z = -11.2, 9.0 # Mitte des Fensters (Y, Z)
 LED_X = 0.0             # ANNAHME: Lage der Lade-LED relativ zur Modulmitte (X); Lichtfenster im Deckel
 LED_W = 8.0
 RAIL_T = 1.0            # hintere Lippe (haelt den Deckel nach aussen, Oeffnung = Akkufach)
@@ -204,7 +207,7 @@ SPRING_X_BASE = POCKET_X0 - SPRING_REC_DEPTH    # Federfuss (Blechoberflaeche) a
 # --- Lademodul-Schacht (stehend: Platine in der XZ-Ebene, Laenge in X, Breite in Z) ---
 CH_SLIT_L = CHARGER_L + CH_CLR_L
 CH_SLIT_T = CHARGER_H + CH_CLR_T
-CH_SLIT_X0 = -33.0
+CH_SLIT_X0 = -33.25
 CH_SLIT_X1 = CH_SLIT_X0 + CH_SLIT_L
 CH_SLIT_Y0, CH_SLIT_Y1 = CHARGER_Y_C - CH_SLIT_T / 2, CHARGER_Y_C + CH_SLIT_T / 2
 CH_SLIT_Z1 = LID_T - LID_GROOVE + CHARGER_W + CH_CLR_W   # Oberkante Schlitz in der Fachdecke (Z)
@@ -212,7 +215,7 @@ BAY_X0, BAY_X1 = CH_SLIT_X0 - RIB_U_T - 0.2, CH_SLIT_X1 + RIB_U_T + 0.2   # Kabe
 BAY_Y0 = RECESS_Y1 + REAR_BLOCK                  # grenzt an die Wand um das Akkufach
 BAY_Y1 = CH_SLIT_Y1 + RIB_U_T + 0.2
 FRAME_X0, FRAME_X1, FRAME_Y1 = -OUTER, -3.0, 7.0   # massiver Rahmen um den Raum (grenzt an Band/Rippen)
-LID_X0, LID_X1 = -35.8, -2.8                     # Deckel (Falz-Aussenmass = Deckel + 0,2)
+LID_X0, LID_X1 = -35.9, -2.4                     # Deckel (Falz-Aussenmass = Deckel + 0,2)
 LID_Y0, LID_Y1 = BAY_Y0 + 0.2, 5.8
 LID_SCREWS = [(-30.0, 2.6), (-8.0, 2.6)]         # M2 Senkkopf, selbstschneidend in Pilotloch
 NOTCH_X = (-26.6, -18.6)                         # Kabeldurchlass Fach -> Raum (breit wie der Boden-Schlitz)
@@ -293,6 +296,8 @@ def cell_bay_features(b):
 def charger_bay(b):
     """Kabel-/Modulraum (von hinten offen, mit Deckel geschlossen): Oeffnung, Deckelfalz, Modul-Schlitz, Schraub-Pilotloecher."""
     b = b.cut(box(BAY_X0, BAY_X1, BAY_Y0 - 0.01, BAY_Y1, -1, CAV_H))
+    if CHARGE_SWITCH:   # Schalterfenster durch die linke Aussenwand in den Kabelraum
+        b = b.cut(box(-OUTER / 2 - 1, BAY_X0 + 0.01, SW_Y - SW_W / 2, SW_Y + SW_W / 2, SW_Z - SW_H / 2, SW_Z + SW_H / 2))
     b = b.cut(box(CH_SLIT_X0, CH_SLIT_X1, CH_SLIT_Y0, CH_SLIT_Y1, CAV_H - 0.1, CH_SLIT_Z1))   # Modul-Oberkante
     b = b.cut(box(LID_X0 - 0.2, LID_X1 + 0.2, LID_Y0 - 0.2, LID_Y1 + 0.2, -1, LID_T))           # Deckelfalz
     for sx, sy in LID_SCREWS:
@@ -637,7 +642,7 @@ def render_png(items, path, elev, azim, title="", size=900):
 def clip_hold_estimate():
     """Grobe Abschaetzung (ANNAHMEN: PETG E=1200 MPa quer zu den Schichten, mu=0.4, Geraetemasse siehe Dict)."""
     E, mu, g = 1200.0, 0.4, 9.81
-    mass = {"lipo_503450": 0.075, "lifepo4_14500": 0.105}[BATTERY_TYPE]       # kg, geschaetzt (Teile + Board + Zelle)
+    mass = {"lipo_503450": 0.075, "lifepo4_14500": 0.130}[BATTERY_TYPE]       # kg, geschaetzt (Teile + Board + Zelle)
     delta = (SLAT_T - (SLAT_T - PRONG_PRELOAD)) / 2                          # Auslenkung je Zinke
     Lp = HOOK_DEPTH - 2.0                                                    # wirksame Biegelaenge (bis zum Haken)
     I = PRONG_W * PRONG_T ** 3 / 12
@@ -727,6 +732,14 @@ def run_cyl_probes(body, door, lid, clip_asm, asm_parts, body_print, inside, pro
     probe(f"Boden ueber dem Modul-Schlitz >= 0.8 mm ({Z_FLOOR_TOP - CH_SLIT_Z1:.2f})", Z_FLOOR_TOP - CH_SLIT_Z1 >= 0.8 - 1e-9
           and inside(body, mxc, CHARGER_Y_C, CH_SLIT_Z1 + 0.4))
     probe("Lademodul weit von der Antennenzone (>= 20 mm in Y)", ANT_Y[0] - (CHARGER_Y_C + CHARGER_H / 2) >= 20.0)
+    if CHARGE_SWITCH:
+        probe(f"Schalterfenster {SW_W} x {SW_H} mm in der Aussenwand frei bis in den Kabelraum",
+              all(not inside(body, x, SW_Y + dy, SW_Z + dz) for x in (-38.5, -37.0, -35.5, BAY_X0 + 0.3)
+                  for dy in (-SW_W / 2 + 0.3, 0, SW_W / 2 - 0.3) for dz in (-SW_H / 2 + 0.3, 0, SW_H / 2 - 0.3)))
+        probe("Schalterfenster: Wand ueber/unter dem Fenster geschlossen, Modul-Schlitz nicht beruehrt",
+              inside(body, -38.0, SW_Y, SW_Z + SW_H / 2 + 0.5) and inside(body, -38.0, SW_Y, SW_Z - SW_H / 2 - 0.5)
+              and SW_Y + SW_W / 2 < CH_SLIT_Y0 - RIB_U_T + 0.01 + 1.5)
+        probe("Schalterfenster weit von der Antennenzone", ANT_Y[0] - (SW_Y + SW_W / 2) >= 20.0)
     probe("Lademodul ausserhalb Clip-Band/Nuten (X < -3)", CH_SLIT_X1 + RIB_U_T < FRAME_X1)
     bl = lid.val().BoundingBox()
     probe("Deckel buendig mit der Rueckseite (z 0 .. LID_T)", abs(bl.zmin) < 1e-6 and bl.zmax >= LID_T)

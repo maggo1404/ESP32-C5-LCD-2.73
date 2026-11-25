@@ -139,10 +139,19 @@ Akkubetrieb direkt versorgen (Q1/Q2 schalten bei 3,0 V durch, der 3,3-V-Buck lä
 >   **Überladung**: Zersetzung, Aufblähen, Brand. Auf dem Board gibt es keinen Zellenschutz.
 > * Vor dem ersten Einsetzen der Zelle: **L1** (2,2 µH, Bauform 2520, Speicherdrossel am SW-Pin von U2 im Schaltplanblock
 >   *CHARGE*; nicht mit L2 am MP1605 verwechseln!) **auslöten**. Ohne L1 kann der Buck-Lader keinen Ladestrom liefern.
-> * **Prüfen** (USB gesteckt, **keine** Zelle, Multimeter an den J1-Kontakten): Spannung ≈ 0 V (höchstens einige 100 mV).
->   Zeigt das Meter nennenswerte Spannung (> 1 V), ist das Board **nicht** sicher – Zelle nicht anschließen.
+> * **Prüfen vor dem ersten Anschluss** (USB gesteckt, **keine** Zelle): Multimeter zwischen **J1 Pin 1 (BAT+)** und **echter Board-Masse**
+>   (USB-C-Schirm oder GND-Pad – **nicht** J1 Pin 2: der Minuspol hängt hinter Q1 und „schwebt“ ohne Zelle). Soll: ≈ 0 V; danach noch
+>   einmal mit ca. **1 kΩ** Last zwischen J1 Pin 1 und GND: weiterhin < 0,5 V. Zeigt das Meter nennenswerte Spannung (> 1 V),
+>   ist das Board **nicht** sicher – Zelle nicht anschließen.
+> * **Erster Anschluss mit mA-Meter in Reihe** mit der Zelle (Modul noch abgeklemmt, USB gesteckt): es müssen **≈ 0 mA** vom Board
+>   in die Zelle fließen. Jeder messbare Ladestrom heißt: L1 nicht wirksam entfernt oder anderer Pfad – sofort trennen.
 > * Das Lademodul im Gehäuse lädt die Zelle mit **3,6 V** (Konstantspannung) – siehe unten, **vor dem Anschließen nachmessen**.
-> * Gerät/Akku nicht ohne Aufsicht laden, nicht unter 0 °C und nicht über 45 °C laden (im Auto im Sommer: lieber nicht laden).
+> * **Ladestrom des Moduls auf ≤ 300 mA (≈ 0,5 C bei 600 mAh) begrenzen** – Pflicht, nicht optional (siehe Prüfschritte unten).
+> * **Das Modul lädt immer, sobald USB (5 V) anliegt – es gibt keinen NTC/Temperaturschutz.** LiFePO4 darf **nicht unter 0 °C und nicht über
+>   45 °C** geladen werden. Im Auto im Sommer (Sonne, > 45 °C) oder bei Frost daher **den Ladeschalter ausschalten bzw. kein USB anstecken**.
+>   Dafür ist ein **Schiebeschalter in der IN+-Leitung des Moduls** vorgesehen (`CHARGE_SWITCH = True`, Fenster 8,5 × 3,5 mm in der
+>   linken Seitenwand, z. B. SS12D00); Alternative (b): Modul mit **NTC-/TS-Pin** verwenden und einen NTC an der Zelle anbringen.
+> * Nicht ohne Aufsicht laden.
 > * Nur Zellen **mit Schutzschaltung (PCM)** für LiFePO4 verwenden (Überladeschutz ca. 3,8–4,0 V, Unterspannung ca. 2,0–2,5 V).
 >   Eine LiPo-PCM (4,25 V) schützt eine LiFePO4-Zelle **nicht**.
 
@@ -153,38 +162,57 @@ Akkubetrieb direkt versorgen (Q1/Q2 schalten bei 3,0 V durch, der 3,3-V-Buck lä
 | **LiFePO4-Zelle 14500 (AA-Format) mit PCM**, ca. 600 mAh | Ø14,0–14,2 × 49,7–50,5 mm blank, mit PCM/Knopfpol bis ca. 53 mm. Das Fach nimmt bis **Ø14,5 × 53,5 mm** auf. |
 | **AA-Haltekontakte** (Plus: Blech, Minus: Blech + Feder) oder Einzelkontakte | Blech ca. 10 × 10 × 0,5 mm in den Taschen, Feder ca. 6 mm frei (Block 2 mm), Ø ≤ 9 mm. Aus einem ausgeschlachteten AA-Halter. |
 | **Lademodul** TP5000 *(auf LiFePO4 / 3,6 V gestellt)* oder CN3058E-Modul | Gehäuse ist für ca. **26 × 17 × 4 mm** ausgelegt (**Annahme, nachmessen**, Parameter `CHARGER_L/W/H`). Eingang 5 V (Klemme/Pads), Ausgang BAT+/BAT−, Lade-LED. |
+| **Mini-Schiebeschalter** (z. B. SS12D00, Gehäuse ca. 8,5 × 3,5 mm) | in der IN+-Leitung des Moduls = **Lade-Aus-Schalter**; Fenster in der linken Seitenwand (`CHARGE_SWITCH`, `SW_*`). Optional, aber empfohlen. |
 | 2× M2x6 Senkkopfschrauben | Deckel des Modul-/Kabelraums (selbstschneidend, Pilotloch Ø1,8) |
 | Litze 0,25–0,35 mm², Schrumpfschlauch, **JST-1.25-Stecker** mit 2 Adern | Kabel vom Kabelraum zum BAT-Stecker **J1** am Board (Stecker passend zu J1 besorgen) |
 | Schaumstoff 1 mm | zwischen Zelle und Akkudeckel (zusätzlich zum Dichtband) |
 
 ### Verkabelung (Schaltbild)
 
+Die meisten TP5000-/TP4056-artigen Module haben **IN− und BAT− intern verbunden** (gemeinsame Masse, **nachmessen**: Durchgang zwischen
+IN− und BAT− im stromlosen Zustand). Daraus folgt:
+
 ```
-  Board                                   Lademodul (im Gehäuse,        Zelle 14500 LiFePO4 + PCM
-                                          auf 3,6 V gestellt!)
-  USB-C VBUS ──┬──► D1 ──► VCC (Board)    ┌───────────────┐
-               │                          │ IN+      BAT+ ├──┬──────────────► Zelle (+)  (Blech bei +X)
-  USB_5V vor D1┴──────────────────────────┤               │  └──────────────► J1 Pin 1 = BAT+  (nicht verifiziert)
-  (Abgriff NICHT VERIFIZIERT)             │               │
-  GND (Board) ────────────────────────────┤ IN−      BAT− ├──┬──────────────► Zelle (−)  (Feder bei −X)
-                                          └───────────────┘  └──────────────► J1 Pin 2 = Minus (über Q1)
+  Board                                   Lademodul (gemeinsame Masse IN−/BAT−, auf 3,6 V!)
+                                          ┌───────────────┐
+  USB_5V vor D1 ──[Schalter]──────────────┤ IN+      BAT+ ├──┬──────────────► Zelle (+)   (Blech bei +X)
+  (Abgriff, Schaltplan geprueft)          │               │  └──────────────► J1 Pin 1 = BAT+
+                                          │ IN−  ═  BAT− ├──┬──────────────► Zelle (−)   (Feder bei −X)
+                                          └───────────────┘  └──────────────► J1 Pin 2 = Minus (Drain Q1)
+  Board-GND: KEINE eigene Leitung zum Modul – der Rückweg läuft über Q1 (Pin 2 → Q1 → GND).
 ```
 
-* **IN+** an **USB_5V vor D1** (VBUS-Seite von D1; **Lötstelle am Board muss vom Nutzer anhand des Schaltplans/Multimeters
-  bestimmt werden – nicht verifiziert**), **IN−** an GND des Boards (gemeinsame Masse; die Drähte laufen durch den Bodenschlitz).
-* **BAT+/BAT−** des Moduls parallel zur Zelle (Kontaktbleche im Fach) **und** zum J1-Kabel. Das Modul lädt die Zelle direkt;
-  das Board hängt über J1 an derselben Zelle (Last im Akkubetrieb).
+* **Empfohlen (Modul mit gemeinsamer Masse):** IN+ von **USB_5V vor D1** (über den Ladeschalter), **IN−/BAT− = Zellen-Minus = J1 Pin 2**.
+  Der Eingangsstrom des Moduls (= Ladestrom) fließt über J1 Pin 2 durch **Q1** (AO3400, Rds-on ≈ 30–50 mΩ) nach Board-GND zurück.
+  Dadurch bleibt Q1 im Pfad: bei **verpolter Zelle** sperrt Q1 (Gate an BAT+), das Modul hat keinen Rückweg → kein Strom, der
+  Verpolschutz des Boards bleibt wirksam. Der Spannungsabfall an Q1 (≈ 15 mV bei 300 mA) ist vernachlässigbar. **Nicht**
+  zusätzlich IN− an Board-GND anlöten: das würde Q1 überbrücken (Verpolschutz weg, Rückstrom des Boards über die Modulmasse).
+* Nur bei einem Modul mit **galvanisch getrenntem** IN−/BAT− (selten) gilt: IN− an Board-GND, BAT− an Zellen-Minus; dann ist Q1 für den Ladepfad
+  ohne Wirkung. Im Zweifel messen (Durchgang) und die Variante oben wählen.
+* **Was nicht geschützt ist:** Das Modul selbst hat keinen Verpolschutz am BAT-Ausgang (Zelle falsch herum an den Blechen → Modul/Zelle
+  gefährdet; Polarität der Marken beachten). Eine PCM-ausgelöste (tiefentladene) Zelle liegt ohne Spannung an BAT+ → Q1 (Gate über R54) bleibt aus und
+  das Modul hat dann **keinen** Rückweg – die Zelle lässt sich dann nicht über dieses Modul „aufwecken“ (ggf. kurz mit Labornetzteil auf > 2,5 V bringen). **Nicht verifiziert – nachmessen.**
+* **Kein Rückspeisen:** Ohne USB darf der 5-V-Knoten nicht über das Modul (BAT+ → IN+, z. B. Body-Diode/Booster) aus der Zelle gespeist werden – sonst bleibt Q2
+  (Gate am USB_5V-Netz) gesperrt und das Board bleibt aus. Test: siehe unten („USB abziehen“). Der Ladeschalter in IN+ trennt diesen Pfad zusätzlich.
+* **IN+** an **USB_5V vor D1** (VBUS-Seite der Schottky D1; laut Schaltplan geprüft, die **Lötstelle am Board** (z. B. D1-Anode) mit Multimeter bestimmen),
+  **BAT+/BAT−** parallel zur Zelle (Kontaktbleche) **und** zum J1-Kabel. Die Drähte laufen durch den Bodenschlitz.
 * Sicherungsvorschlag: 0,5–1 A Polyfuse in die BAT+-Leitung der Zelle (nicht im Gehäuse vorgesehen).
 * **Polarität von J1:** Laut Schaltplan Pin 1 = BAT+, Pin 2 = Minus (über Q1). Die **physische** Pinreihenfolge am Board und am
   Stecker unbedingt mit Multimeter prüfen – **nicht verifiziert**. Verpolung zerstört Board und Zelle.
 
-### Lademodul vor dem Anschluss prüfen (3,6 V!)
+### Lademodul vor dem Anschluss prüfen (3,6 V und ≤ 300 mA!)
 
 1. Modul **ohne Zelle** mit 5 V versorgen (z. B. USB-Netzteil) und die Spannung zwischen **BAT+ und BAT−** messen.
 2. Soll: **3,60 … 3,65 V**. Zeigt das Meter **4,2 V** (Werkseinstellung vieler TP5000-Module), ist das Modul auf Li-Ion gestellt:
    per Lötbrücke/Schalter/Widerstand laut Modul auf **3,6 V (LiFePO4)** umstellen und erneut messen. **Erst bei 3,6 V die Zelle anschließen.**
-3. Ladestrom nach Möglichkeit auf ≤ 0,5 C (ca. 300 mA) begrenzen (Strom-Widerstand/Jumper des Moduls).
+3. **Ladestrom auf ≤ 300 mA begrenzen (Pflicht):** Bei TP5000-/CN3058-Modulen wird der Strom über den Programmierwiderstand (Rprog/Rcs, oft als
+   Lötbrücken/DIP-Pads für 0,5/1/2 A oder als Widerstand beschriftet) eingestellt – Wert **laut Datenblatt/Beschriftung des konkreten Moduls**
+   wählen, nicht raten. Messen: **mA-Meter in Reihe** mit BAT+ zu einer entladenen, aber nicht tiefentladenen Zelle (oder einem 3,0–3,3-V-Netzteil
+   mit Strombegrenzung als Ersatzlast); der gemessene Konstantstrom muss ≤ 300 mA sein. Sonst Programmierung ändern, erneut messen.
 4. Erst jetzt Zelle an das Modul anschließen, die LED beobachten (Laden/Fertig), nach dem ersten Zyklus Zellspannung messen (≤ 3,65 V).
+5. **USB-Abzieh-Test:** Zelle eingesetzt und Board läuft, USB abziehen: **USB_5V < 0,3 V** (Multimeter am USB_5V-Netz/IN+ des Moduls) und das Board
+   bleibt an. Bleibt USB_5V höher (Rückspeisung durch das Modul), Q2 bleibt gesperrt → Modul nicht verwenden bzw. Ladeschalter/Diode in IN+ ergänzen.
+6. Gleichzeitig prüfen: Board bei gestecktem USB und **abgeklemmtem Modul** (Test oben) lädt die Zelle nicht (≈ 0 mA).
 
 ### Konstruktion (was der Code erzeugt)
 
@@ -201,15 +229,16 @@ Akkubetrieb direkt versorgen (Q1/Q2 schalten bei 3,0 V durch, der 3,3-V-Buck lä
   Bodenschlitz (8 × 19 mm) zum BAT-Stecker **J1** (X −22,6, Y −17) und zu den 5-V-Abgriffen auf dem Board.
 * **Modul-/Kabelraum** (X −34,4…−4,2, Y −15,6…−0,7, von hinten offen, mit **Deckel** `charger_lid` geschlossen): massiver Rahmen
   statt Rippenraster. Das Lademodul **steht hochkant** (Platine in der XZ-Ebene) in einem 27,4 × 4,6 mm Schlitz, unten in einer
-  Rille des Deckels, oben in einem Schlitz in der Fachdecke (Rest Boden 1,2 mm), an den Enden von U-förmigen Rippen am Deckel gehalten. Warum
+  Rille des Deckels, oben in einem Schlitz in der Fachdecke (Rest Boden 1,2 mm), an den Enden von U-förmigen Rippen am Deckel gehalten (Längenspiel 1,9 mm, ±0,95 je Ende). Warum
   hochkant: flach liegend hätte das Modul (26 × 17) nirgends neben dem BAT-Stecker-Schlitz, den Clip-Bändern und der Antennenzone Platz.
   Der Raum liegt ≥ 20 mm von der Antennenzone (X −24…−4, Y 25,5…34) entfernt; Rippen/Bänder um den Clip bleiben unverändert.
+* **Ladeschalter-Fenster** (`CHARGE_SWITCH`): 8,5 × 3,5 mm durch die linke Seitenwand (Y −11,2, Z 9) in den Kabelraum; der Schalter (z. B. SS12D00) wird innen eingeklebt, sein Hebel ragt durch das Fenster. Er liegt weit (> 20 mm) von der Antennenzone.
 * **Deckel** `charger_lid`: 1,8 mm Platte bündig im Falz, 2× M2x6 Senkkopf; **Lichtfenster** 8 × 2 mm in der Mitte unter dem Modul
   (Lade-LED sichtbar, wenn die LED an der Unterkante in Modulmitte sitzt – **Annahme**, `LED_X`/`LED_W` anpassen).
 * **Dicke 31,7 mm** (statt 22,3): Fachhöhe 18,0 = Lippe 1,0 + Deckelnut 1,6 + Ø14,5-Zelle mit 0,9 mm Schaumstoff/Spiel + Boden. Sie ist die Untergrenze
   für Ø14,5; dünner geht nur mit kleinerer Zelle (z. B. Ø13,x).
 * **Vent-Clip verstärkt:** Platte 3,5 mm (statt 3,0) und Zinken 2,8 mm (statt 2,4) → ca. 1,6-fache Klemmkraft; Überstand nach hinten
-  18,7 mm. Rechnerisch (Annahmen: PETG E = 1200 MPa, μ = 0,4, 105 g) Sicherheit ca. 5 gegen Rutschen und ca. 3 gegen Kippen – ein
+  18,7 mm. Rechnerisch (Annahmen: PETG E = 1200 MPa, μ = 0,4, 130 g) Sicherheit ca. 4,5 gegen Rutschen und ca. 2,7 gegen Kippen – ein
   Papierwert, im Auto testen. Wegen der größeren Hebelwirkung (Dicke 31,7 mm) nicht über schwere Lüftungslamellen hängen.
 
 ### Zusammenbau LiFePO4
@@ -217,10 +246,10 @@ Akkubetrieb direkt versorgen (Q1/Q2 schalten bei 3,0 V durch, der 3,3-V-Buck lä
 1. **Board-Umbau:** L1 auslöten, Test ohne Zelle (siehe oben). Lademodul auf 3,6 V prüfen (siehe oben).
 2. Kontakte in die Taschen (Blech Plus; Feder-Blech Minus) einlegen/verkleben, Drähte in die Kabelrinne legen und durch den Durchlass
    führen (Kabel von den Blechen zum Kabelraum).
-3. Modul mit Drähten versehen (IN+ / IN− zum Board, BAT+ / BAT− zu Zelle/J1), **Verkabelung vor dem Einbau mit Multimeter prüfen**;
-   Modul in die Rippen des Deckels setzen, Deckel mit dem Modul von hinten einschieben (Modul-Oberkante in den Deckenschlitz).
+3. Modul mit Drähten versehen (IN+ zum Board über den Schalter, BAT+ / BAT− zu Zelle und J1), **Verkabelung vor dem Einbau mit Multimeter prüfen**;
+   Modul in die Rippen des Deckels setzen (**vor dem Drucken ein echtes Modul anpassen/Probekörper drucken – Maße und Lage von LED/Anschlüssen variieren**), Deckel mit dem Modul von hinten einschieben (Modul-Oberkante in den Deckenschlitz).
    Der Deckel noch **nicht** festschrauben, solange die Drähte noch nicht zum Board geführt sind.
-4. Drähte durch den **Bodenschlitz** führen, IN+/IN− an die Lötstellen am Board (5-V-Abgriff!) löten, J1-Stecker am BAT-Stecker einstecken
+4. Drähte durch den **Bodenschlitz** führen, **nur IN+** (über den Ladeschalter) an USB_5V vor D1 löten (IN− bleibt an der gemeinsamen Modulmasse = Zellen-Minus = J1 Pin 2, **nicht** an Board-GND, siehe Verkabelung), J1-Stecker am BAT-Stecker einstecken
    (Polarität!), dann Platine+LCD einsetzen (wie LiPo) und den Rahmen verschrauben.
 5. Deckel mit 2× M2x6 festschrauben. Zelle (Plus rechts/**+X**, Minuspol an die Feder) einlegen, Schaumstoff auflegen, Akkudeckel schließen.
 
@@ -234,12 +263,14 @@ Opfer-Stege gibt es hier nicht (Fachdecke 16,4 mm Brücke mit 45°-Fasen). Fasen
 
 | Annahme | Wo geprüft werden muss |
 |---|---|
-| **Lage des 5-V-Abgriffs (USB_5V vor D1)** | Schaltplan POWER-Block + Multimeter am Board; der Gehäuse-Bodenschlitz (X −26,6…−18,6, Y −26,5…−7,5) ist nur der Kabelweg |
+| **Lötstelle des 5-V-Abgriffs (USB_5V vor D1; Netz laut Schaltplan geprüft)** | Multimeter am Board; der Gehäuse-Bodenschlitz (X −26,6…−18,6, Y −26,5…−7,5) ist nur der Kabelweg |
 | **Ladeschlussspannung des ETA6098 = 4,2 V** (nicht per Widerstand ladbar auf 3,6 V) | ETA6098-Datenblatt; deshalb L1 entfernen |
 | **Maße des Lademoduls** 26 × 17 × 4 mm, **Lage der Lade-LED** | echtes Modul messen; `CHARGER_L/W/H`, `LED_X` |
 | **Pinbelegung J1** (Pin 1 BAT+) und Steckerpolarität | Multimeter / Schaltplan, bevor eine Zelle angeschlossen wird |
 | **Federkontakt-Maße** (Blech 10 × 10 × 0,5, Feder ≈ 6 mm) | passenden AA-Halter nachmessen; `PLATE_*`, `SPRING_*` |
 | **Zellmaße** Ø ≤ 14,5, L ≤ 53,5 (mit PCM) | Datenblatt/Messschieber der gekauften Zelle |
+| Gemeinsame Masse IN−/BAT− des Moduls; Rückweg über Q1; Aufwecken tiefentladener Zellen | Durchgangsmessung am Modul, Tests oben |
+| Kontaktblech-Halt (Lippe/Schlitz) nicht umgesetzt | Bleche mit Klebstoff/Heißkleber oder Zelle selbst gehalten |
 | Entladung/Firmware (Spannungsanzeige, Abschaltschwelle ≈ 3,1 V) | siehe `firmware/` (separat) |
 
 ## Vent-Clip

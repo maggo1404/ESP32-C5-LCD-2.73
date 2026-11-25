@@ -5,12 +5,12 @@ Z: Fach 0..18.00, Boden bis 19.50, Platine 23.80..25.40, LCD bis 29.40, Koerper-
 Schraube: M2 Senkkopf in den Ecken, Rahmen 1.8 + Bohrung 8.0 -> M2x8 (selbstschneidend)
 Schrauben-Mitte +-35.8, Abstand Bohrungsrand zur Platinentasche: 2.59 mm
 == Gueltigkeit ==
-body          valid=True solids=1 vol=  84337.3 mm3 bbox=(78.0 x 78.0 x 29.9)
+body          valid=True solids=1 vol=  84073.0 mm3 bbox=(78.0 x 78.0 x 29.9)
 front_bezel   valid=True solids=1 vol=   6127.2 mm3 bbox=(78.0 x 78.0 x 1.8)
 battery_door  valid=True solids=1 vol=   1454.9 mm3 bbox=(58.6 x 20.1 x 1.4)
 vent_clip     valid=True solids=1 vol=   2848.7 mm3 bbox=(12.0 x 28.0 x 21.9)
 board_dummy   valid=True solids=1 vol=  43769.8 mm3 bbox=(68.0 x 68.8 x 9.6)
-charger_lid   valid=True solids=1 vol=   1876.9 mm3 bbox=(33.0 x 21.2 x 15.8)
+charger_lid   valid=True solids=1 vol=   1894.2 mm3 bbox=(33.5 x 21.2 x 15.8)
 cell_dummy    valid=True solids=1 vol=   7997.6 mm3 bbox=(50.5 x 14.2 x 14.2)
 charger_dummy valid=True solids=1 vol=   1768.0 mm3 bbox=(26.0 x 4.0 x 17.0)
 == Durchdringung (Baugruppe) ==
@@ -47,7 +47,7 @@ body          x    6.0..  84.0 y    6.0..  84.0 z 0..29.9
 front_bezel   x   91.0.. 169.0 y    6.0..  84.0 z 0..1.8
 battery_door  x   15.7..  74.3 y  110.0.. 130.1 z 0..1.4
 vent_clip     x  119.1.. 140.9 y  106.0.. 134.0 z 0..12.0
-charger_lid   x  113.5.. 146.5 y  164.4.. 185.6 z 0..15.8
+charger_lid   x  113.2.. 146.8 y  164.4.. 185.6 z 0..15.8
 == Funktions-Probes ==
 Nut Querformat frei von linker Aussenkante bis Anschlag                OK
 Nut Querformat endet am Anschlag (Wand dahinter)                       OK
@@ -73,7 +73,7 @@ Maximale freie Spannweite Hohlraum x=-33: 15 mm <= 20                  OK
 Antennenzone rueckseitig frei (nur Boden)                              OK
 Clip-Mitte ausserhalb der Antennenzone                                 OK
 Bruecken 2D: groesste Freispannweite (kuerzeste Richtung) 16 mm bei (-24, -36) <= 20 OK
-Clip-Schaetzung (ANNAHMEN: PETG E=1200 MPa, mu=0.4, Masse 105 g, Hebel 25 mm): Klemmkraft je Zinke 7.2 N, Biegespannung 6.0 MPa, Sicherheit Rutschen 5.6 / Kippen 3.3
+Clip-Schaetzung (ANNAHMEN: PETG E=1200 MPa, mu=0.4, Masse 130 g, Hebel 25 mm): Klemmkraft je Zinke 7.2 N, Biegespannung 6.0 MPa, Sicherheit Rutschen 4.5 / Kippen 2.7
 == LiFePO4: Zelle / Kontakte ==
 Zelle max O14,5 x 53,5 (mit Schutzschaltung): frei von Koerper         OK
 Zelle max O14,5 x 53,5 (mit Schutzschaltung): frei von Deckel          OK
@@ -103,9 +103,12 @@ Kabelraum: nur Schwelle zur Rueckseite (Durchlass beginnt erst ab z=4) OK
 == LiFePO4: Lademodul / Deckel ==
 Lademodul 26 x 17 x 4 steht im Schacht: frei von Koerper               OK
 Lademodul: frei von Deckel (Rille/Fuehrungen)                          OK
-Lademodul bis 26.7 x 17.2 x 4.5 (Schacht ganz frei): frei von Koerper  OK
+Lademodul bis 26.9 x 17.2 x 4.5 (Schacht ganz frei): frei von Koerper  OK
 Boden ueber dem Modul-Schlitz >= 0.8 mm (1.20)                         OK
 Lademodul weit von der Antennenzone (>= 20 mm in Y)                    OK
+Schalterfenster 8.5 x 3.5 mm in der Aussenwand frei bis in den Kabelraum OK
+Schalterfenster: Wand ueber/unter dem Fenster geschlossen, Modul-Schlitz nicht beruehrt OK
+Schalterfenster weit von der Antennenzone                              OK
 Lademodul ausserhalb Clip-Band/Nuten (X < -3)                          OK
 Deckel buendig mit der Rueckseite (z 0 .. LID_T)                       OK
 Deckel liegt im Falz auf (Falzboden ueber dem Deckel)                  OK
@@ -116,8 +119,8 @@ Schraube M2 bei (-30,+3): Deckelloch frei, Pilotloch frei, Material daneben mass
 Schraube M2 bei (-8,+3): Deckelloch frei, Pilotloch frei, Material daneben massiv OK
 Schraube Deckel: M2x6 Senkkopf (Deckel 1.8 + Pilotloch 6 - 0.5 = 7.3), 2 Stueck
 == LiFePO4: Vent-Clip ==
-Clip-Haltesicherheit gegen Rutschen 5.6 >= 3                           OK
-Clip-Haltesicherheit gegen Kippen 3.3 >= 2                             OK
+Clip-Haltesicherheit gegen Rutschen 4.5 >= 3                           OK
+Clip-Haltesicherheit gegen Kippen 2.7 >= 2                             OK
 RESULT: ALLE PRUEFUNGEN OK
 3MF body: geschlossen=True
 3MF front_bezel: geschlossen=True

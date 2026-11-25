@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Erzeugt Vorschaubilder (Poster) fuer den 3D-Viewer: laedt web/ + export/glb headless
+// Erzeugt Vorschaubilder (Poster) fuer den 3D-Viewer: laedt web/ + export/<variante>/glb headless
 // (Playwright/Chromium, WebGL via SwiftShader) und speichert export/<variante>/glb/posters/<modell>.png.
 //   node cad_posters.mjs [lipo|lifepo4|all]   (benoetigt: npm i playwright && npx playwright install chromium)
 import { createRequire } from 'node:module';
