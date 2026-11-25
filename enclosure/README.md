@@ -1,33 +1,50 @@
 # Gehäuse für Waveshare ESP32-C5-LCD-2.73 (parametrisch, CadQuery)
 
-Handgerät mit **herausnehmbarem LiPo 503450** und **Lüftungsgitter-Clip** fürs Auto.
+Handgerät mit **herausnehmbarem Akku** und **Lüftungsgitter-Clip** fürs Auto, in **zwei Varianten**:
+
+| Variante | Akku | Laden | Dicke | Ausgabe |
+|---|---|---|---|---|
+| **LiPo** (`lipo_503450`, Standard) | LiPo 503450, flach | Onboard-Lader des Boards (ETA6098) | 22,3 mm | `export/lipo/` |
+| **LiFePO4** (`lifepo4_14500`) | LiFePO4 14500 (AA-Format), hitzefest | **internes Lademodul (3,6 V)**, Onboard-Lader per Rework abgeschaltet | 31,7 mm | `export/lifepo4/` |
+
+> **Achtung LiFePO4-Variante:** Sie funktioniert nur mit einem Eingriff am Board (Bauteil **L1** entfernen). **Niemals** eine
+> LiFePO4-Zelle an ein unverändertes Board mit USB-Kabel anschließen – der Onboard-Lader würde sie auf 4,2 V laden
+> (Überladung, Brandgefahr). Details und weitere Warnungen: [LiFePO4-Variante](#lifepo4-variante).
+
 Alles wird aus `enclosure.py` erzeugt:
 
 ```bash
 python -m venv venv && venv/bin/pip install cadquery trimesh numpy matplotlib
-venv/bin/python enclosure.py        # schreibt nach enclosure/export/
+venv/bin/python enclosure.py                          # LiPo        -> enclosure/export/lipo/
+venv/bin/python enclosure.py --battery lifepo4_14500  # LiFePO4     -> enclosure/export/lifepo4/
+venv/bin/python enclosure.py --all                    # beide nacheinander (je ein Prozess, ca. 6 min)
+# alternativ: ENC_BATTERY=lifepo4_14500 venv/bin/python enclosure.py
 ```
 
 Das Skript prüft auch: jedes Teil ist ein gültiger Einzelkörper, keine Durchdringung in der Baugruppe
-(inkl. `board_dummy`), Teile liegen ohne Überlappung auf dem 220x220-Bett (`export/check_report.txt`).
+(inkl. `board_dummy`, bei LiFePO4 auch Zelle und Lademodul), Teile liegen ohne Überlappung auf dem 220x220-Bett,
+Brückenspannweiten ≤ 20 mm, geschlossene 3MF-Netze und – je Variante – Funktions-Probes (`export/<variante>/check_report.txt`).
+Alle Pfade unten beziehen sich auf `export/<variante>/` (früher flach in `export/`; die LiPo-Geometrie ist unverändert).
 
 ## 3D-Viewer (Web-Seite)
 
 Die Seite (`web/`) zeigt das Gehäuse per Button **„3D ansehen“** in einer Lightbox (three.js r170, lokal unter
-`web/vendor/three/`, wird erst beim Klick geladen). Die Modelle liegen als GLB in `export/glb/`
-(`assembly`, `body`, `front_bezel`, `battery_door`, `vent_clip`, `assembly_exploded`) plus Vorschaubilder in `export/glb/posters/`;
-`pages.yml` kopiert beides nach `gehaeuse/3d/`.
+`web/vendor/three/`, wird erst beim Klick geladen) mit **Schalter LiPo / LiFePO4**. Die Modelle liegen als GLB in
+`export/<variante>/glb/` (`assembly`, `body`, `front_bezel`, `battery_door`, `vent_clip`, `assembly_exploded`, LiFePO4 zusätzlich
+`charger_lid`) plus Vorschaubilder in `export/<variante>/glb/posters/`; `pages.yml` kopiert beides nach `gehaeuse/3d/<variante>/`
+und die Druckdateien (`3mf/step/stl`) mit Präfix (`lipo_body.stl`, `lifepo4_print_plate.3mf` …) nach `gehaeuse/` (Liste `files.json`).
+`build.yml` hängt dieselben Dateien (ohne `*_dummy`) mit Präfix an das Release.
 
 ```bash
 venv/bin/pip install cascadio==0.0.17 trimesh numpy
-venv/bin/python step_to_glb.py      # STEP -> GLB (Toleranz 0,05 mm / 0,3 rad); läuft auch am Ende von enclosure.py, wenn cascadio installiert ist
-node cad_posters.mjs                # Poster-PNGs (npm i playwright; npx playwright install chromium)
+venv/bin/python step_to_glb.py [lipo|lifepo4|all]   # STEP -> GLB (Toleranz 0,05 mm / 0,3 rad); läuft auch am Ende von enclosure.py, wenn cascadio installiert ist
+node cad_posters.mjs [lipo|lifepo4|all]             # Poster-PNGs (npm i playwright; npx playwright install chromium)
 ```
 
-Farben setzt `step_to_glb.py` je Teil (Tabelle `COLORS`; `board_dummy` = dunkelgrüne Platine/Display, sichtbar nur in der Baugruppe).
+Farben setzt `step_to_glb.py` je Teil (Tabelle `COLORS`; `board_dummy` = dunkelgrüne Platine/Display, `cell_dummy` = Zelle, `charger_dummy` = Lademodul, sichtbar nur in der Baugruppe).
 Die Explosionsansicht entsteht dort durch Z-Versatz der Baugruppen-Knoten (`EXPLODE`).
 Hinweis: Die Vorlage-Pipeline nutzt puppeteer-core für die Poster; hier wird stattdessen Playwright verwendet (vorinstalliert).
-Nach Änderungen am Modell: `python enclosure.py`, dann ggf. `node cad_posters.mjs`, und die GLBs/Poster mit einchecken.
+Nach Änderungen am Modell: `python enclosure.py --all`, dann ggf. `node cad_posters.mjs`, und die GLBs/Poster mit einchecken.
 
 ## Teile
 
@@ -37,10 +54,12 @@ Nach Änderungen am Modell: `python enclosure.py`, dann ggf. `node cad_posters.m
 | Gehäusekörper | `body` | Rückseite nach unten, Bauteilraum offen nach oben |
 | Akkudeckel (Schieber) | `battery_door` | Außenseite (mit Fingermulde) nach oben |
 | Vent-Clip | `vent_clip` | **auf der Seite** (Platte steht hochkant), Schichten laufen entlang der Zinken-Biegerichtung |
+| Modul-/Kabeldeckel *(nur LiFePO4)* | `charger_lid` | Außenseite (bündig mit der Rückseite) nach unten, Führungsrippen zeigen nach oben |
 | `board_dummy` | nur `.step`/`.stl` | Referenzkörper (Display+Platine+Bauteile), nicht drucken |
+| `cell_dummy`, `charger_dummy` *(nur LiFePO4)* | nur `.step` (in `assembly.step`) | Referenzkörper Zelle 14500 und Lademodul, nicht drucken |
 
 `*.stl` sind in **Druckausrichtung**, `*.step` in **Einbaulage** (`assembly.step` = Baugruppe).
-`print_plate.3mf` enthält alle vier Teile fertig angeordnet. `preview_*.png` sind Vorschauen.
+`print_plate.3mf` enthält alle druckbaren Teile (LiPo 4, LiFePO4 5) fertig angeordnet. `preview_*.png` sind Vorschauen.
 
 **Koordinatenkonvention** (siehe Kopf von `enclosure.py`): Ursprung Platinenmitte, +X rechts, +Y oben
 **bei Blick auf die Vorderseite**, +Z zum Betrachter. Die Maßzeichnung zeigt die *Rückseite* (links/rechts
@@ -49,12 +68,13 @@ vorne gesehen **oben rechts** (Käfigmitte bx 18,7 → X = +15,3), der BAT-Steck
 
 ## Maße (Standardparameter)
 
-- Außenmaß Körper/Rahmen **78,0 x 78,0 mm** (Platinentasche 68,6), Gesamtdicke **22,3 mm** (ohne Clip; Clip +18,2 mm nach hinten)
-- Stapel von hinten: Lippe 1,0 + Deckelnut 1,6 + Akku 6,0 (=8,6), Trennboden 1,5, Bauteilraum 4,3 (Bauteile 4,0 + 0,3 Luft),
+- Außenmaß Körper/Rahmen **78,0 x 78,0 mm** (Platinentasche 68,6), Gesamtdicke **LiPo 22,3 mm / LiFePO4 31,7 mm** (ohne Clip;
+  Clip +18,2 mm bzw. +18,7 mm nach hinten)
+- Stapel von hinten (LiPo; LiFePO4 hat statt „Akku 6,0“ **15,4** = Ø14,5 + 0,9 Schaumstoff/Spiel, also Fachhöhe 18,0): Lippe 1,0 + Deckelnut 1,6 + Akku 6,0 (=8,6), Trennboden 1,5, Bauteilraum 4,3 (Bauteile 4,0 + 0,3 Luft),
   Platine 1,6, LCD 4,0, 0,5 Luft (Dichtband), Frontrahmen 1,8
 - Fenster 50,5 x 50,5 mm mit 1 mm 45°-Fase außen (aktive Fläche 48,96), Offset `WIN_OFF_X/Y` (Standard 0 = mittig; aus der
   Zeichnung ca. mittig gemessen)
-- Akkufach 52 x 36 x 6,0 mm (unten, **bewusst nicht über der Antenne**), Schiebedeckel 1,6 mm in Führungsnut
+- Akkufach LiPo 52 x 36 x 6,0 mm (LiFePO4: 54 x 16,4 x 18,0 mm, siehe unten) (unten, **bewusst nicht über der Antenne**), Schiebedeckel 1,6 mm in Führungsnut
 - Rückseite über der PCB-Antenne (X -24…-4, Y 25,5…34) ausgespart: dort nur 1,5 mm Boden, keine Rippen, kein Metall.
   Abschalten mit `ANT_RECESS = False`.
 
@@ -90,7 +110,7 @@ Das LCD-Glas ist durchgehend, die M2-Löcher gibt es nur in der Platine dahinter
   (X -24…-4, Y 25,5…34) gibt es keine Rippen und keinen Clip/Band; dort nur 1,5 mm Boden.
 - Lüftungsschlitze: nicht vorgesehen (optional, nicht umgesetzt).
 
-## Akku (wichtig)
+## Akku (wichtig) – LiPo-Variante
 
 - LiPo **503450** (ca. 50 x 34 x 5 mm inkl. Schutzschaltung), Fach 52 x 36 x 6,0. Akku von hinten einlegen, Kabel
   durch den Bodenschlitz zum **BAT-Stecker (JST 1.25, 2-polig)** führen und stecken.
@@ -105,6 +125,122 @@ Das LCD-Glas ist durchgehend, die M2-Löcher gibt es nur in der Platine dahinter
 - **Sommer/Auto:** Im Fahrzeug werden leicht >60 °C erreicht. LiPo bei Hitze nicht im Auto lassen:
   **Akku im Sommer entnehmen** bzw. Gerät nicht in der Sonne liegen lassen. Gehäuse aus **PETG oder besser ASA**
   drucken (PLA verformt sich ab ~55 °C).
+
+## LiFePO4-Variante
+
+LiFePO4 (3,2 V nominal, max. 3,65 V) verträgt Hitze im Auto deutlich besser als LiPo. Das Board kann so eine Zelle im
+Akkubetrieb direkt versorgen (Q1/Q2 schalten bei 3,0 V durch, der 3,3-V-Buck läuft dann im Dropout), **der Onboard-Lader
+(U2 ETA6098) darf sie aber nicht laden**. Darum gilt für diese Variante:
+
+> ## ⚠ PFLICHT: Onboard-Lader abschalten (L1 entfernen) – sonst Brandgefahr
+>
+> * **Niemals** eine LiFePO4-Zelle an ein **unverändertes** Board anschließen, solange USB steckt oder irgendwann gesteckt werden kann.
+>   Der ETA6098 lädt eine 1S-Zelle auf (laut Annahme, Datenblatt nicht geprüft) **4,2 V**. Das ist für LiFePO4 (max. 3,65 V) eine
+>   **Überladung**: Zersetzung, Aufblähen, Brand. Auf dem Board gibt es keinen Zellenschutz.
+> * Vor dem ersten Einsetzen der Zelle: **L1** (2,2 µH, Bauform 2520, Speicherdrossel am SW-Pin von U2 im Schaltplanblock
+>   *CHARGE*; nicht mit L2 am MP1605 verwechseln!) **auslöten**. Ohne L1 kann der Buck-Lader keinen Ladestrom liefern.
+> * **Prüfen** (USB gesteckt, **keine** Zelle, Multimeter an den J1-Kontakten): Spannung ≈ 0 V (höchstens einige 100 mV).
+>   Zeigt das Meter nennenswerte Spannung (> 1 V), ist das Board **nicht** sicher – Zelle nicht anschließen.
+> * Das Lademodul im Gehäuse lädt die Zelle mit **3,6 V** (Konstantspannung) – siehe unten, **vor dem Anschließen nachmessen**.
+> * Gerät/Akku nicht ohne Aufsicht laden, nicht unter 0 °C und nicht über 45 °C laden (im Auto im Sommer: lieber nicht laden).
+> * Nur Zellen **mit Schutzschaltung (PCM)** für LiFePO4 verwenden (Überladeschutz ca. 3,8–4,0 V, Unterspannung ca. 2,0–2,5 V).
+>   Eine LiPo-PCM (4,25 V) schützt eine LiFePO4-Zelle **nicht**.
+
+### Teileliste (zusätzlich zu M2x8-Schrauben und Dichtband)
+
+| Teil | Hinweis |
+|---|---|
+| **LiFePO4-Zelle 14500 (AA-Format) mit PCM**, ca. 600 mAh | Ø14,0–14,2 × 49,7–50,5 mm blank, mit PCM/Knopfpol bis ca. 53 mm. Das Fach nimmt bis **Ø14,5 × 53,5 mm** auf. |
+| **AA-Haltekontakte** (Plus: Blech, Minus: Blech + Feder) oder Einzelkontakte | Blech ca. 10 × 10 × 0,5 mm in den Taschen, Feder ca. 6 mm frei (Block 2 mm), Ø ≤ 9 mm. Aus einem ausgeschlachteten AA-Halter. |
+| **Lademodul** TP5000 *(auf LiFePO4 / 3,6 V gestellt)* oder CN3058E-Modul | Gehäuse ist für ca. **26 × 17 × 4 mm** ausgelegt (**Annahme, nachmessen**, Parameter `CHARGER_L/W/H`). Eingang 5 V (Klemme/Pads), Ausgang BAT+/BAT−, Lade-LED. |
+| 2× M2x6 Senkkopfschrauben | Deckel des Modul-/Kabelraums (selbstschneidend, Pilotloch Ø1,8) |
+| Litze 0,25–0,35 mm², Schrumpfschlauch, **JST-1.25-Stecker** mit 2 Adern | Kabel vom Kabelraum zum BAT-Stecker **J1** am Board (Stecker passend zu J1 besorgen) |
+| Schaumstoff 1 mm | zwischen Zelle und Akkudeckel (zusätzlich zum Dichtband) |
+
+### Verkabelung (Schaltbild)
+
+```
+  Board                                   Lademodul (im Gehäuse,        Zelle 14500 LiFePO4 + PCM
+                                          auf 3,6 V gestellt!)
+  USB-C VBUS ──┬──► D1 ──► VCC (Board)    ┌───────────────┐
+               │                          │ IN+      BAT+ ├──┬──────────────► Zelle (+)  (Blech bei +X)
+  USB_5V vor D1┴──────────────────────────┤               │  └──────────────► J1 Pin 1 = BAT+  (nicht verifiziert)
+  (Abgriff NICHT VERIFIZIERT)             │               │
+  GND (Board) ────────────────────────────┤ IN−      BAT− ├──┬──────────────► Zelle (−)  (Feder bei −X)
+                                          └───────────────┘  └──────────────► J1 Pin 2 = Minus (über Q1)
+```
+
+* **IN+** an **USB_5V vor D1** (VBUS-Seite von D1; **Lötstelle am Board muss vom Nutzer anhand des Schaltplans/Multimeters
+  bestimmt werden – nicht verifiziert**), **IN−** an GND des Boards (gemeinsame Masse; die Drähte laufen durch den Bodenschlitz).
+* **BAT+/BAT−** des Moduls parallel zur Zelle (Kontaktbleche im Fach) **und** zum J1-Kabel. Das Modul lädt die Zelle direkt;
+  das Board hängt über J1 an derselben Zelle (Last im Akkubetrieb).
+* Sicherungsvorschlag: 0,5–1 A Polyfuse in die BAT+-Leitung der Zelle (nicht im Gehäuse vorgesehen).
+* **Polarität von J1:** Laut Schaltplan Pin 1 = BAT+, Pin 2 = Minus (über Q1). Die **physische** Pinreihenfolge am Board und am
+  Stecker unbedingt mit Multimeter prüfen – **nicht verifiziert**. Verpolung zerstört Board und Zelle.
+
+### Lademodul vor dem Anschluss prüfen (3,6 V!)
+
+1. Modul **ohne Zelle** mit 5 V versorgen (z. B. USB-Netzteil) und die Spannung zwischen **BAT+ und BAT−** messen.
+2. Soll: **3,60 … 3,65 V**. Zeigt das Meter **4,2 V** (Werkseinstellung vieler TP5000-Module), ist das Modul auf Li-Ion gestellt:
+   per Lötbrücke/Schalter/Widerstand laut Modul auf **3,6 V (LiFePO4)** umstellen und erneut messen. **Erst bei 3,6 V die Zelle anschließen.**
+3. Ladestrom nach Möglichkeit auf ≤ 0,5 C (ca. 300 mA) begrenzen (Strom-Widerstand/Jumper des Moduls).
+4. Erst jetzt Zelle an das Modul anschließen, die LED beobachten (Laden/Fertig), nach dem ersten Zyklus Zellspannung messen (≤ 3,65 V).
+
+### Konstruktion (was der Code erzeugt)
+
+* **Zellfach:** 54 × 16,4 mm, Höhe 18,0 mm, Zelle **längs in X** am unteren Rand (Y −37 … −20,6), von hinten (Akkudeckel
+  abgeschoben) einlegbar. Obere Fachkanten mit **45°-Fasen = Zellenwiege** (zentriert, 0,35 mm Spiel), Decke ohne Stützen druckbar
+  (Brücke 16,4 mm; keine Opfer-Stege). Zelle ruht auf **1 mm Schaumstoff** auf dem Akkudeckel (Fuge 0,6 mm bei Ø14,5).
+* **Kontakte:** **Plus (+X)** flache Blechtasche 10,4 × 10,4 × 0,7 mm bündig in der Stirnwand; **Minus (−X)** Federtasche Ø9,2 × 1,5 mm
+  mit Blechtasche dahinter. Federlänge eingebaut 2,0 mm (Zelle 53,5) … 5,8 mm (Zelle 49,7) bei 6 mm freier Länge, Block 2 mm
+  (Zellen am unteren Längenrand haben kaum Vorspannung; lieber PCM-Zellen ≥ 50 mm nehmen). **Polarität:** Plus liegt bei **+X** (rechts bei Blick auf die Vorderseite, also **links bei Blick auf die Rückseite**
+  beim Einlegen), der Minuspol mit Feder bei **−X**. Das **„+“ und „−“ ist vertieft in die Fachdecke eingeprägt** (sichtbar beim
+  Einlegen von hinten, je 7 mm von der Stirnwand). Mechanisch ließe sich die Zelle (wie in jedem AA-Halter) auch verkehrt einlegen – deshalb **immer** nach den Marken einlegen (Pluspol = Knopf zum flachen Blech bei +X, flacher Minuspol an die Feder bei −X).
+* **Kabelrinne** (2 mm tief, Z 6…9) in der oberen Fachwand über die ganze Länge, mit Verbindung zu beiden Blechtaschen; von dort
+  der **Durchlass** (X −26,6…−18,6, ab Z 4, Schwelle zur Rückseite) in den **Kabel-/Modulraum** und weiter durch den bekannten
+  Bodenschlitz (8 × 19 mm) zum BAT-Stecker **J1** (X −22,6, Y −17) und zu den 5-V-Abgriffen auf dem Board.
+* **Modul-/Kabelraum** (X −34,4…−4,2, Y −15,6…−0,7, von hinten offen, mit **Deckel** `charger_lid` geschlossen): massiver Rahmen
+  statt Rippenraster. Das Lademodul **steht hochkant** (Platine in der XZ-Ebene) in einem 27,4 × 4,6 mm Schlitz, unten in einer
+  Rille des Deckels, oben in einem Schlitz in der Fachdecke (Rest Boden 1,2 mm), an den Enden von U-förmigen Rippen am Deckel gehalten. Warum
+  hochkant: flach liegend hätte das Modul (26 × 17) nirgends neben dem BAT-Stecker-Schlitz, den Clip-Bändern und der Antennenzone Platz.
+  Der Raum liegt ≥ 20 mm von der Antennenzone (X −24…−4, Y 25,5…34) entfernt; Rippen/Bänder um den Clip bleiben unverändert.
+* **Deckel** `charger_lid`: 1,8 mm Platte bündig im Falz, 2× M2x6 Senkkopf; **Lichtfenster** 8 × 2 mm in der Mitte unter dem Modul
+  (Lade-LED sichtbar, wenn die LED an der Unterkante in Modulmitte sitzt – **Annahme**, `LED_X`/`LED_W` anpassen).
+* **Dicke 31,7 mm** (statt 22,3): Fachhöhe 18,0 = Lippe 1,0 + Deckelnut 1,6 + Ø14,5-Zelle mit 0,9 mm Schaumstoff/Spiel + Boden. Sie ist die Untergrenze
+  für Ø14,5; dünner geht nur mit kleinerer Zelle (z. B. Ø13,x).
+* **Vent-Clip verstärkt:** Platte 3,5 mm (statt 3,0) und Zinken 2,8 mm (statt 2,4) → ca. 1,6-fache Klemmkraft; Überstand nach hinten
+  18,7 mm. Rechnerisch (Annahmen: PETG E = 1200 MPa, μ = 0,4, 105 g) Sicherheit ca. 5 gegen Rutschen und ca. 3 gegen Kippen – ein
+  Papierwert, im Auto testen. Wegen der größeren Hebelwirkung (Dicke 31,7 mm) nicht über schwere Lüftungslamellen hängen.
+
+### Zusammenbau LiFePO4
+
+1. **Board-Umbau:** L1 auslöten, Test ohne Zelle (siehe oben). Lademodul auf 3,6 V prüfen (siehe oben).
+2. Kontakte in die Taschen (Blech Plus; Feder-Blech Minus) einlegen/verkleben, Drähte in die Kabelrinne legen und durch den Durchlass
+   führen (Kabel von den Blechen zum Kabelraum).
+3. Modul mit Drähten versehen (IN+ / IN− zum Board, BAT+ / BAT− zu Zelle/J1), **Verkabelung vor dem Einbau mit Multimeter prüfen**;
+   Modul in die Rippen des Deckels setzen, Deckel mit dem Modul von hinten einschieben (Modul-Oberkante in den Deckenschlitz).
+   Der Deckel noch **nicht** festschrauben, solange die Drähte noch nicht zum Board geführt sind.
+4. Drähte durch den **Bodenschlitz** führen, IN+/IN− an die Lötstellen am Board (5-V-Abgriff!) löten, J1-Stecker am BAT-Stecker einstecken
+   (Polarität!), dann Platine+LCD einsetzen (wie LiPo) und den Rahmen verschrauben.
+5. Deckel mit 2× M2x6 festschrauben. Zelle (Plus rechts/**+X**, Minuspol an die Feder) einlegen, Schaumstoff auflegen, Akkudeckel schließen.
+
+### Druck (LiFePO4)
+
+Wie die LiPo-Variante (PETG/ASA, 0,2 mm, 3–4 Perimeter, keine Stützen): Körper Rückseite unten, Akkudeckel Außenseite nach oben,
+**Modul-Deckel** mit den Rippen nach oben, Clip auf der Seite. `export/lifepo4/print_plate.3mf` enthält alle fünf Teile.
+Opfer-Stege gibt es hier nicht (Fachdecke 16,4 mm Brücke mit 45°-Fasen). Fasen/Taschen vorher mit einer Zelle und einem Probekörper testen.
+
+### Nicht verifizierte Annahmen (bitte prüfen!)
+
+| Annahme | Wo geprüft werden muss |
+|---|---|
+| **Lage des 5-V-Abgriffs (USB_5V vor D1)** | Schaltplan POWER-Block + Multimeter am Board; der Gehäuse-Bodenschlitz (X −26,6…−18,6, Y −26,5…−7,5) ist nur der Kabelweg |
+| **Ladeschlussspannung des ETA6098 = 4,2 V** (nicht per Widerstand ladbar auf 3,6 V) | ETA6098-Datenblatt; deshalb L1 entfernen |
+| **Maße des Lademoduls** 26 × 17 × 4 mm, **Lage der Lade-LED** | echtes Modul messen; `CHARGER_L/W/H`, `LED_X` |
+| **Pinbelegung J1** (Pin 1 BAT+) und Steckerpolarität | Multimeter / Schaltplan, bevor eine Zelle angeschlossen wird |
+| **Federkontakt-Maße** (Blech 10 × 10 × 0,5, Feder ≈ 6 mm) | passenden AA-Halter nachmessen; `PLATE_*`, `SPRING_*` |
+| **Zellmaße** Ø ≤ 14,5, L ≤ 53,5 (mit PCM) | Datenblatt/Messschieber der gekauften Zelle |
+| Entladung/Firmware (Spannungsanzeige, Abschaltschwelle ≈ 3,1 V) | siehe `firmware/` (separat) |
 
 ## Vent-Clip
 
@@ -143,7 +279,9 @@ Benötigt außerdem: 4x M2x8 Senkkopfschrauben und ca. 250 mm Schaumstoff-Dichtb
 | USB-C-Höhe/Überstand, Mitte | `USB_H`, `USB_OVERHANG`, `USB_X` |
 | Displayfenster-Versatz | `WIN_OFF_X`, `WIN_OFF_Y` |
 | Taster-Höhe über Platine | `BTN_Z_OFF` |
-| Akkugröße | `BAT_L`, `BAT_W`, `BAT_T` |
+| Akkugröße (LiPo) | `BATTERIES["lipo_503450"]` (`BAT_L`, `BAT_W`, `BAT_T`) |
+| Zelle 14500 / Kontaktbleche / Feder | `CELL_D_MAX`, `CELL_L_MAX`, `PLATE_W`, `PLATE_T`, `SPRING_FREE` (LiFePO4) |
+| Lademodul-Maße, Lage der LED | `CHARGER_L`, `CHARGER_W`, `CHARGER_H`, `LED_X` (LiFePO4) |
 | Lamellendicke Lüftung | `SLAT_T` |
 | Schraubenart | `USE_INSERTS` |
 | Außenmaß / Schraubenlage | `OUTER`, `SCREW_C` |

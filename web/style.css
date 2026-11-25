@@ -36,5 +36,9 @@ html.cad-open{overflow:hidden}
 .cad-tab{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:5.5rem;padding:4px 6px;font:inherit;font-size:.85rem;background:var(--card);color:var(--fg);border:2px solid var(--line);border-radius:8px;cursor:pointer}
 .cad-tab img{width:80px;height:60px;object-fit:cover;border-radius:4px;background:var(--bg)}
 .cad-tab[aria-pressed=true]{border-color:var(--accent)}
+.cad-variants{display:flex;gap:6px;justify-content:center}
+.cad-variant{font:inherit;font-size:.85rem;padding:.3rem .8rem;background:var(--card);color:var(--fg);border:2px solid var(--line);border-radius:999px;cursor:pointer}
+.cad-variant[aria-pressed=true]{border-color:var(--accent);font-weight:600}
+.cad-launch button+button{margin-left:.5rem}
 .cad-hint{text-align:center;color:var(--muted);font-size:.8rem}
 @media (max-width:30rem){.cad-tab img{width:60px;height:45px}.cad-tab{min-width:4.5rem;font-size:.75rem}}

@@ -25,6 +25,7 @@ jobs:
       - run: cmake -S firmware/components/its/test -B build-test
       - run: cmake --build build-test
       - run: ctest --test-dir build-test --output-on-failure
+      - run: make -C firmware/main/test_battery
 
   deploy:
     name: Web-Flasher veroeffentlichen
@@ -53,14 +54,17 @@ jobs:
           mkdir -p _site/firmware _site/gehaeuse
           cp -r web/. _site/
           cp out/firmware-factory.bin _site/firmware/
-          for f in enclosure/export/*.3mf enclosure/export/*.step enclosure/export/*.stl; do
-            [ -e "$f" ] && cp "$f" _site/gehaeuse/ || true
+          # Druckdateien beider Varianten flach nach gehaeuse/, mit Variantenpraefix (lipo_*, lifepo4_*)
+          for v in lipo lifepo4; do
+            for f in enclosure/export/$v/*.3mf enclosure/export/$v/*.step enclosure/export/$v/*.stl; do
+              [ -e "$f" ] && cp "$f" "_site/gehaeuse/${v}_$(basename "$f")" || true
+            done
+            # 3D-Viewer: GLB-Modelle + Vorschaubilder je Variante (nicht in files.json)
+            if [ -d enclosure/export/$v/glb ]; then
+              mkdir -p _site/gehaeuse/3d/$v
+              cp -r enclosure/export/$v/glb/. _site/gehaeuse/3d/$v/
+            fi
           done
-          # 3D-Viewer: GLB-Modelle + Vorschaubilder (nicht in files.json)
-          if [ -d enclosure/export/glb ]; then
-            mkdir -p _site/gehaeuse/3d
-            cp -r enclosure/export/glb/. _site/gehaeuse/3d/
-          fi
           VERSION="$(git describe --tags --always --dirty 2>/dev/null || git rev-parse --short HEAD)"
           python3 - "$VERSION" <<'PY'
           import json, sys
@@ -78,8 +82,8 @@ jobs:
           with open("_site/manifest.json", "w", encoding="utf-8") as fh:
               json.dump(manifest, fh, ensure_ascii=False, indent=2)
           PY
-          rm -f _site/gehaeuse/board_dummy.*
-          (cd _site/gehaeuse && python3 -c "import json,os; print(json.dumps(sorted(f for f in os.listdir('.') if f.endswith(('.3mf','.step','.stl')) and not f.startswith('assembly'))))" > files.json)
+          rm -f _site/gehaeuse/*_board_dummy.* _site/gehaeuse/*_cell_dummy.* _site/gehaeuse/*_charger_dummy.*
+          (cd _site/gehaeuse && python3 -c "import json,os; print(json.dumps(sorted(f for f in os.listdir('.') if f.endswith(('.3mf','.step','.stl')) and '_assembly' not in f)))" > files.json)
           touch _site/.nojekyll
           find _site -type f | sort
 

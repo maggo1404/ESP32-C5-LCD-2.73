@@ -1,0 +1,126 @@
+== Variante: LiFePO4 14500 (lifepo4_14500) -> export/lifepo4/ ==
+== Parameter/Stack ==
+Aussenmass Koerper/Rahmen: 78.0 x 78.0 mm, Gesamtdicke ohne Clip: 31.70 mm (mit Clip +18.7, gesamt 50.4 mm)
+Z: Fach 0..18.00, Boden bis 19.50, Platine 23.80..25.40, LCD bis 29.40, Koerper-Oberkante 29.90, Rahmen bis 31.70
+Schraube: M2 Senkkopf in den Ecken, Rahmen 1.8 + Bohrung 8.0 -> M2x8 (selbstschneidend)
+Schrauben-Mitte +-35.8, Abstand Bohrungsrand zur Platinentasche: 2.59 mm
+== Gueltigkeit ==
+body          valid=True solids=1 vol=  84337.3 mm3 bbox=(78.0 x 78.0 x 29.9)
+front_bezel   valid=True solids=1 vol=   6127.2 mm3 bbox=(78.0 x 78.0 x 1.8)
+battery_door  valid=True solids=1 vol=   1454.9 mm3 bbox=(58.6 x 20.1 x 1.4)
+vent_clip     valid=True solids=1 vol=   2848.7 mm3 bbox=(12.0 x 28.0 x 21.9)
+board_dummy   valid=True solids=1 vol=  43769.8 mm3 bbox=(68.0 x 68.8 x 9.6)
+charger_lid   valid=True solids=1 vol=   1876.9 mm3 bbox=(33.0 x 21.2 x 15.8)
+cell_dummy    valid=True solids=1 vol=   7997.6 mm3 bbox=(50.5 x 14.2 x 14.2)
+charger_dummy valid=True solids=1 vol=   1768.0 mm3 bbox=(26.0 x 4.0 x 17.0)
+== Durchdringung (Baugruppe) ==
+body          x front_bezel      0.000 mm3 OK
+body          x battery_door     0.000 mm3 OK
+body          x vent_clip        0.000 mm3 OK
+body          x board_dummy      0.000 mm3 OK
+body          x charger_lid      0.000 mm3 OK
+body          x cell_dummy       0.000 mm3 OK
+body          x charger_dummy    0.000 mm3 OK
+front_bezel   x battery_door     0.000 mm3 OK
+front_bezel   x vent_clip        0.000 mm3 OK
+front_bezel   x board_dummy      0.000 mm3 OK
+front_bezel   x charger_lid      0.000 mm3 OK
+front_bezel   x cell_dummy       0.000 mm3 OK
+front_bezel   x charger_dummy    0.000 mm3 OK
+battery_door  x vent_clip        0.000 mm3 OK
+battery_door  x board_dummy      0.000 mm3 OK
+battery_door  x charger_lid      0.000 mm3 OK
+battery_door  x cell_dummy       0.000 mm3 OK
+battery_door  x charger_dummy    0.000 mm3 OK
+vent_clip     x board_dummy      0.000 mm3 OK
+vent_clip     x charger_lid      0.000 mm3 OK
+vent_clip     x cell_dummy       0.000 mm3 OK
+vent_clip     x charger_dummy    0.000 mm3 OK
+board_dummy   x charger_lid      0.000 mm3 OK
+board_dummy   x cell_dummy       0.000 mm3 OK
+board_dummy   x charger_dummy    0.000 mm3 OK
+charger_lid   x cell_dummy       0.000 mm3 OK
+charger_lid   x charger_dummy    0.000 mm3 OK
+cell_dummy    x charger_dummy    0.000 mm3 OK
+== Druckplatte ==
+body          x    6.0..  84.0 y    6.0..  84.0 z 0..29.9
+front_bezel   x   91.0.. 169.0 y    6.0..  84.0 z 0..1.8
+battery_door  x   15.7..  74.3 y  110.0.. 130.1 z 0..1.4
+vent_clip     x  119.1.. 140.9 y  106.0.. 134.0 z 0..12.0
+charger_lid   x  113.5.. 146.5 y  164.4.. 185.6 z 0..15.8
+== Funktions-Probes ==
+Nut Querformat frei von linker Aussenkante bis Anschlag                OK
+Nut Querformat endet am Anschlag (Wand dahinter)                       OK
+Nut Hochformat frei von oberer Aussenkante bis Anschlag                OK
+Deckel liegt hinter der Lippe (zmin >= RAIL_T)                         OK
+Deckel ueberlappt Lippe >= 1.5 mm je Seite                             OK
+Lippe (Koerper) unter dem Deckel bei x=-28, z=0.5                      OK
+Deckel sitzt in Nut bei x=-28                                          OK
+Lippe (Koerper) unter dem Deckel bei x=+28, z=0.5                      OK
+Deckel sitzt in Nut bei x=+28                                          OK
+Akkufach nach hinten offen (Oeffnung frei)                             OK
+TF-Fenster frei bei X=8.8                                              OK
+TF-Fenster frei bei X=15.3                                             OK
+TF-Fenster frei bei X=21.8                                             OK
+TF-Fingermulde aussen frei                                             OK
+TF-Fenster ca. 15.3 mm, Wand daneben geschlossen                       OK
+Rastmulde im Koerper vorhanden                                         OK
+Rastnase am Clip vorhanden                                             OK
+Maximale freie Spannweite Akkufach: 16 mm <= 20                        OK
+Maximale freie Spannweite Hohlraum y=30: 20 mm <= 20                   OK
+Maximale freie Spannweite Hohlraum y=-8 (rechts): 3 mm <= 20           OK
+Maximale freie Spannweite Hohlraum x=-33: 15 mm <= 20                  OK
+Antennenzone rueckseitig frei (nur Boden)                              OK
+Clip-Mitte ausserhalb der Antennenzone                                 OK
+Bruecken 2D: groesste Freispannweite (kuerzeste Richtung) 16 mm bei (-24, -36) <= 20 OK
+Clip-Schaetzung (ANNAHMEN: PETG E=1200 MPa, mu=0.4, Masse 105 g, Hebel 25 mm): Klemmkraft je Zinke 7.2 N, Biegespannung 6.0 MPa, Sicherheit Rutschen 5.6 / Kippen 3.3
+== LiFePO4: Zelle / Kontakte ==
+Zelle max O14,5 x 53,5 (mit Schutzschaltung): frei von Koerper         OK
+Zelle max O14,5 x 53,5 (mit Schutzschaltung): frei von Deckel          OK
+Zelle nominal O14,2 x 50,5: frei von Koerper                           OK
+Zelle nominal O14,2 x 50,5: frei von Deckel                            OK
+Zelle kurz O14,0 x 49,7: frei von Koerper                              OK
+Zelle kurz O14,0 x 49,7: frei von Deckel                               OK
+Zelle max am Minuspol anliegend (Feder auf Block): frei von Koerper    OK
+Wiege: Spiel Zelle max <-> 45-Grad-Fase 0.35 mm (0 .. 0.8)             OK
+Fuge Zelle max <-> Deckel (Schaumstoff 1 mm, komprimiert) 0.60 mm >= 0.5 OK
+Feder (frei 6.0, Block 2.0): Laenge eingebaut 2.0 (Zelle 53.5) .. 5.0 (nominal) .. 5.8 (Zelle 49.7)
+Feder: kuerzeste Zelle (49,7) wird noch beruehrt (Laenge <= frei)      OK
+Feder: laengste Zelle (53,5) drueckt nicht auf Block (Laenge >= Block) OK
+Pluspol: Blechtasche 10,4 x 10,4 vorhanden (Ecken frei)                OK
+Pluspol: Blechtasche begrenzt (Wand dahinter / daneben)                OK
+Minuspol: Federtasche O9,2 frei                                        OK
+Minuspol: Federtasche begrenzt (Tasche hat Boden bei Blech)            OK
+Minuspol: Blechtasche hinter der Feder frei                            OK
+Polaritaetsmarke Plus (vertieft in der Fachdecke)                      OK
+Polaritaetsmarke Minus (vertieft in der Fachdecke)                     OK
+Akkudeckel: Oberseite unter der Zelle (Z)                              OK
+== LiFePO4: Kabelwege (Strecken im Koerper frei) ==
+Kabelweg Pluspol -> Rinne -> Durchlass -> Kabelraum -> Bodenschlitz (BAT-Stecker) OK
+Kabelweg Minuspol -> Rinne -> Durchlass -> Kabelraum -> Bodenschlitz   OK
+Kabelweg Lademodul (beide Enden) -> Kabelraum -> Bodenschlitz (5 V / Akku) OK
+Kabelraum: nur Schwelle zur Rueckseite (Durchlass beginnt erst ab z=4) OK
+== LiFePO4: Lademodul / Deckel ==
+Lademodul 26 x 17 x 4 steht im Schacht: frei von Koerper               OK
+Lademodul: frei von Deckel (Rille/Fuehrungen)                          OK
+Lademodul bis 26.7 x 17.2 x 4.5 (Schacht ganz frei): frei von Koerper  OK
+Boden ueber dem Modul-Schlitz >= 0.8 mm (1.20)                         OK
+Lademodul weit von der Antennenzone (>= 20 mm in Y)                    OK
+Lademodul ausserhalb Clip-Band/Nuten (X < -3)                          OK
+Deckel buendig mit der Rueckseite (z 0 .. LID_T)                       OK
+Deckel liegt im Falz auf (Falzboden ueber dem Deckel)                  OK
+Deckel frei von Koerper / Akkudeckel / Clip                            OK
+Rueckseite ueber dem Kabelraum durch den Deckel geschlossen (ausser Lichtfenster) OK
+Lichtfenster im Deckel offen                                           OK
+Schraube M2 bei (-30,+3): Deckelloch frei, Pilotloch frei, Material daneben massiv OK
+Schraube M2 bei (-8,+3): Deckelloch frei, Pilotloch frei, Material daneben massiv OK
+Schraube Deckel: M2x6 Senkkopf (Deckel 1.8 + Pilotloch 6 - 0.5 = 7.3), 2 Stueck
+== LiFePO4: Vent-Clip ==
+Clip-Haltesicherheit gegen Rutschen 5.6 >= 3                           OK
+Clip-Haltesicherheit gegen Kippen 3.3 >= 2                             OK
+RESULT: ALLE PRUEFUNGEN OK
+3MF body: geschlossen=True
+3MF front_bezel: geschlossen=True
+3MF battery_door: geschlossen=True
+3MF vent_clip: geschlossen=True
+3MF charger_lid: geschlossen=True

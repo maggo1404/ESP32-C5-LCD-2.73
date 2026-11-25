@@ -1,5 +1,6 @@
+== Variante: LiPo 503450 (lipo_503450) -> export/lipo/ ==
 == Parameter/Stack ==
-Aussenmass Koerper/Rahmen: 78.0 x 78.0 mm, Gesamtdicke ohne Clip: 22.30 mm
+Aussenmass Koerper/Rahmen: 78.0 x 78.0 mm, Gesamtdicke ohne Clip: 22.30 mm (mit Clip +18.2, gesamt 40.5 mm)
 Z: Fach 0..8.60, Boden bis 10.10, Platine 14.40..16.00, LCD bis 20.00, Koerper-Oberkante 20.50, Rahmen bis 22.30
 Schraube: M2 Senkkopf in den Ecken, Rahmen 1.8 + Bohrung 8.0 -> M2x8 (selbstschneidend)
 Schrauben-Mitte +-35.8, Abstand Bohrungsrand zur Platinentasche: 2.59 mm
@@ -49,6 +50,8 @@ Maximale freie Spannweite Hohlraum y=-8 (rechts): 3 mm <= 20           OK
 Maximale freie Spannweite Hohlraum x=-33: 12 mm <= 20                  OK
 Antennenzone rueckseitig frei (nur Boden)                              OK
 Clip-Mitte ausserhalb der Antennenzone                                 OK
+Bruecken 2D: groesste Freispannweite (kuerzeste Richtung) 17 mm bei (-6, -36) <= 20 OK
+Clip-Schaetzung (ANNAHMEN: PETG E=1200 MPa, mu=0.4, Masse 75 g, Hebel 21 mm): Klemmkraft je Zinke 4.5 N, Biegespannung 5.1 MPa, Sicherheit Rutschen 4.9 / Kippen 3.6
 RESULT: ALLE PRUEFUNGEN OK
 3MF body: geschlossen=True
 3MF front_bezel: geschlossen=True

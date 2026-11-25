@@ -1,15 +1,22 @@
 // 3D-Viewer fuer das Gehaeuse: Lightbox mit three.js (lokal unter vendor/three, Importmap in index.html).
 // three.js wird erst beim Klick auf "3D ansehen" per dynamischem import() geladen.
 
-const BASE = 'gehaeuse/3d/';
-const MODELS = [
+// Zwei Gehaeuse-Varianten (enclosure/export/<variante>/glb -> gehaeuse/3d/<variante>/): LiPo 503450 und LiFePO4 14500.
+const COMMON = [
   { id: 'assembly', label: 'Baugruppe' },
   { id: 'body', label: 'Gehäuse' },
   { id: 'front_bezel', label: 'Frontrahmen' },
   { id: 'battery_door', label: 'Akkudeckel' },
-  { id: 'vent_clip', label: 'Lüftungs-Clip' },
-  { id: 'assembly_exploded', label: 'Explosionsansicht' },
 ];
+const VARIANTS = [
+  { id: 'lipo', label: 'LiPo 503450',
+    models: [...COMMON, { id: 'vent_clip', label: 'Lüftungs-Clip' }, { id: 'assembly_exploded', label: 'Explosionsansicht' }] },
+  { id: 'lifepo4', label: 'LiFePO4 14500',
+    models: [...COMMON, { id: 'charger_lid', label: 'Modul-Deckel' }, { id: 'vent_clip', label: 'Lüftungs-Clip' },
+             { id: 'assembly_exploded', label: 'Explosionsansicht' }] },
+];
+let variant = VARIANTS[0];
+const base = () => `gehaeuse/3d/${variant.id}/`;
 const HINT_MOUSE = 'Ziehen: drehen · Scrollen: zoomen · Rechtsklick: verschieben';
 const HINT_TOUCH = 'Ziehen: drehen · Zwei Finger: zoomen/verschieben';
 const isTouch = () => window.matchMedia('(pointer: coarse)').matches;
@@ -48,27 +55,44 @@ function buildDom() {
   const bar = el('div', 'cad-bar');
   const tabs = el('div', 'cad-tabs');
   tabs.setAttribute('aria-label', 'Modell wählen');
+  const variants = el('div', 'cad-variants');
+  variants.setAttribute('role', 'group');
+  variants.setAttribute('aria-label', 'Variante wählen');
+  const vbuttons = VARIANTS.map((vr) => {
+    const b = el('button', 'cad-variant', vr.label);
+    b.type = 'button';
+    b.dataset.variant = vr.id;
+    variants.append(b);
+    return b;
+  });
   const hint = el('div', 'cad-hint', HINT_MOUSE);
   const status = el('div', 'cad-status');
   status.setAttribute('role', 'status');
-  bar.append(tabs, hint);
+  bar.append(variants, tabs, hint);
   dialog.append(stage, close, status, bar);
   document.body.append(dialog);
 
-  const buttons = MODELS.map((m) => {
-    const b = el('button', 'cad-tab');
-    b.type = 'button';
-    b.dataset.model = m.id;
-    const img = el('img');
-    img.alt = '';
-    img.loading = 'lazy';
-    img.src = `${BASE}posters/${m.id}.png`;
-    img.addEventListener('error', () => img.remove());
-    b.append(img, el('span', null, m.label));
-    tabs.append(b);
-    return b;
-  });
-  return { dialog, stage, close, tabs, buttons, status, hint };
+  const d = { dialog, stage, close, tabs, buttons: [], vbuttons, status, hint };
+  d.renderTabs = () => {
+    tabs.replaceChildren();
+    d.buttons = variant.models.map((m) => {
+      const b = el('button', 'cad-tab');
+      b.type = 'button';
+      b.dataset.model = m.id;
+      const img = el('img');
+      img.alt = '';
+      img.loading = 'lazy';
+      img.src = `${base()}posters/${m.id}.png`;
+      img.addEventListener('error', () => img.remove());
+      b.append(img, el('span', null, m.label));
+      tabs.append(b);
+      return b;
+    });
+    vbuttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.variant === variant.id)));
+    dialog.dataset.variant = variant.id;
+  };
+  d.renderTabs();
+  return d;
 }
 
 function disposeObject(root) {
@@ -83,14 +107,16 @@ function disposeObject(root) {
   });
 }
 
-async function open(initial) {
+async function open(initial, variantId) {
+  variant = VARIANTS.find((x) => x.id === variantId) || variant;
   if (!viewer) {
     viewer = buildDom();
     viewer.close.addEventListener('click', () => viewer.dialog.close());
   }
   const v = viewer;
-  const { dialog, stage, status, buttons } = v;
+  const { dialog, stage, status } = v;
   if (dialog.open) return;
+  v.renderTabs();
   const my = ++gen;
   const stale = () => my !== gen;
   let cleanup = null; // wird nach dem Aufbau der Szene gesetzt
@@ -188,13 +214,13 @@ async function open(initial) {
   async function show(id) {
     const my = ++token;
     current = id;
-    buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.model === id)));
+    v.buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.model === id)));
     dialog.dataset.ready = '';
     status.className = 'cad-status';
     status.textContent = 'Modell wird geladen …';
     if (model) { scene.remove(model); disposeObject(model); model = null; }
     try {
-      const gltf = await loader.loadAsync(`${BASE}${id}.glb`);
+      const gltf = await loader.loadAsync(`${base()}${id}.glb`);
       if (my !== token || disposed || stale()) { disposeObject(gltf.scene); return; }
       model = gltf.scene;
       scene.add(model);
@@ -215,6 +241,14 @@ async function open(initial) {
     if (b && b.dataset.model !== current) show(b.dataset.model);
   };
   v.tabs.addEventListener('click', onTab);
+  const onVariant = (e) => {
+    const b = e.target.closest('.cad-variant');
+    if (!b || b.dataset.variant === variant.id) return;
+    variant = VARIANTS.find((x) => x.id === b.dataset.variant);
+    v.renderTabs();
+    show(variant.models.some((m) => m.id === current) ? current : 'assembly');
+  };
+  v.vbuttons.forEach((b) => b.addEventListener('click', onVariant));
 
   function loop() {
     if (disposed) return;
@@ -230,6 +264,7 @@ async function open(initial) {
     ro.disconnect();
     mq.removeEventListener('change', applyTheme);
     v.tabs.removeEventListener('click', onTab);
+    v.vbuttons.forEach((b) => b.removeEventListener('click', onVariant));
     controls.dispose();
     if (model) disposeObject(model);
     envTex.dispose();
@@ -249,5 +284,5 @@ async function open(initial) {
 
 document.addEventListener('click', (e) => {
   const b = e.target.closest('[data-cad-open]');
-  if (b) { e.preventDefault(); open(b.dataset.cadOpen || 'assembly'); }
+  if (b) { e.preventDefault(); open(b.dataset.cadOpen || 'assembly', b.dataset.cadVariant); }
 });

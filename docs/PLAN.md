@@ -13,6 +13,7 @@ GitHub Pages.
 | Framework | ESP-IDF **v5.5.6** + **LVGL 8.4** (wie die Waveshare-Beispiele, LVGL 9 ist mit deren Treiber inkompatibel) |
 | Extras | USB-Raw-Ausgabe (SLIP, kompatibel zu sl2mqtt3) und SD-Karten-Log (pcap, LINKTYPE 105) |
 | Gehäuse | Handgerät mit herausnehmbarem LiPo **503450 (1000 mAh, ca. 50×34×5 mm)** und integriertem **Lüftungsgitter-Clip** |
+| Gehäuse-Variante LiFePO4 | Zusätzlich `lifepo4_14500`: LiFePO4 14500 (AA-Format, ~600 mAh, mit PCM) längs im Fach, **internes Lademodul** (TP5000/CN3058, 3,6 V) hochkant hinter der Platine, Gehäuse 31,7 mm dick. Voraussetzung: **Onboard-Lader ETA6098 per Entfernen von L1 abschalten** (er lädt nach Annahme auf 4,2 V, nicht per Widerstand programmierbar). Das Modul wird aus USB_5V (vor D1) gespeist – Lötstelle **nicht verifiziert**. Siehe `enclosure/README.md` |
 | Branch | `main` (Default, Pages-Deploy) und `claude/admiring-bohr-ybe4c1` |
 | Lizenz | GPL-3.0-or-later (Decoder-Logik ist angelehnt an cits-to-go, GPL-3.0) |
 
@@ -39,6 +40,10 @@ GitHub Pages.
   - ESP32-C5-WROOM mit **PCB-Antenne oben rechts** (x ≈ 38–58, y ≈ 0–28): dort kein Metall, möglichst dünne Wand
   - Stecker: UART unten links (x ≈ 13), I2C unten rechts (x ≈ 54), RTC-Batterie (x ≈ 10, y ≈ 52),
     **BAT (LiPo, JST 1.25)** rechts unten (x ≈ 57, y ≈ 53)
+- Lader/Akku (Schaltplan, Annahmen markiert): Lader **U2 ETA6098** mit L1 2,2 µH, ISET R24 820 K ≈ 0,27 A, Ladeschlussspannung
+  nicht im Schaltplan (Annahme 4,2 V); kein Power-Path-Lader: USB → **D1 (Schottky)** → VCC, Akku über **Q2 (P-FET)**, Verpolschutz
+  **Q1 (N-FET)** im Minuszweig, **kein Zellenschutz** auf dem Board (PCM in der Zelle nötig); 3,3 V per **MP1605 Buck** (kein Boost, unter
+  ≈3,4 V Dropout); VBAT-Teiler R21/R25 = 3:1 auf CH32V003 PC4. LiFePO4 direkt an J1 ist daher nur **ohne Onboard-Lader** zulässig.
 - Dicken sind auf der Seite nicht angegeben, Schätzwerte (parametrisch, vom Nutzer nachmessen):
   LCD-Modul vor der Platine 4,0, Platine 1,6, Bauteile hinten max. 4,0
 
@@ -81,6 +86,8 @@ Kabel zum BAT-Stecker), **Lüftungsgitter-Clip** als separates Teil per Schwalbe
 (hoch/quer einschiebbar), keine Metallteile über der Antenne.
 Exporte: `*.step` je Teil + Baugruppe, `*.stl`, eine **`.3mf`** mit allen Teilen druckfertig
 angeordnet. Plus `enclosure/README.md` mit Druckeinstellungen (PETG/ASA fürs Auto!).
+Zwei Varianten per `BATTERY_TYPE` (`python enclosure.py --battery lipo_503450|lifepo4_14500`, `--all`): Ausgabe in `enclosure/export/lipo/` bzw.
+`export/lifepo4/`; der Web-3D-Viewer hat einen Schalter LiPo/LiFePO4.
 
 ### WP4 – CI + Web-Flasher (`.github/workflows`, `web/`)
 - Workflow `build.yml`: Host-Tests des Decoders, Firmware-Build im `espressif/idf:v5.5.x`-Container,
