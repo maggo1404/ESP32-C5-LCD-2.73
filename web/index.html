@@ -6,6 +6,8 @@
 <title>ITS-G5 Empfänger – Web-Flasher</title>
 <meta name="description" content="Firmware für den ESP32-C5-LCD-2.73 direkt im Browser flashen: ITS-G5-Empfänger für C-ITS-Nachrichten.">
 <link rel="stylesheet" href="style.css">
+<script type="importmap">{"imports":{"three":"./vendor/three/three.module.min.js","three/addons/":"./vendor/three/addons/"}}</script>
+<script type="module" src="cad-lightbox.js"></script>
 <script type="module" src="https://unpkg.com/esp-web-tools@10.5.2/dist/web/install-button.js?module"></script>
 </head>
 <body>
@@ -65,6 +67,7 @@ ein pcap-Log auf der SD-Karte.</p>
 <section>
 <h2>Gehäuse</h2>
 <p>3D-druckbares Handgerät-Gehäuse mit Akkufach und Lüftungsgitter-Clip (PETG oder ASA empfohlen, besonders fürs Auto):</p>
+<p class="cad-launch"><button type="button" class="fallback" data-cad-open="assembly" id="cad-open" hidden>3D ansehen</button></p>
 <ul id="enclosure"><li>Dateien werden geladen …</li></ul>
 </section>
 
@@ -78,6 +81,8 @@ ein pcap-Log auf der SD-Karte.</p>
   fetch('manifest.json').then(function(r){return r.json()}).then(function(m){
     var v=document.getElementById('version'); v.textContent='Firmware-Version: '+m.version; v.hidden=false;
   }).catch(function(){});
+  var cb=document.getElementById('cad-open');
+  fetch('gehaeuse/3d/assembly.glb',{method:'HEAD'}).then(function(r){if(r.ok)cb.hidden=false}).catch(function(){});
   var ul=document.getElementById('enclosure');
   fetch('gehaeuse/files.json').then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(files){
     if(!files.length)throw 0;

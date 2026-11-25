@@ -11,6 +11,24 @@ venv/bin/python enclosure.py        # schreibt nach enclosure/export/
 Das Skript prüft auch: jedes Teil ist ein gültiger Einzelkörper, keine Durchdringung in der Baugruppe
 (inkl. `board_dummy`), Teile liegen ohne Überlappung auf dem 220x220-Bett (`export/check_report.txt`).
 
+## 3D-Viewer (Web-Seite)
+
+Die Seite (`web/`) zeigt das Gehäuse per Button **„3D ansehen“** in einer Lightbox (three.js r170, lokal unter
+`web/vendor/three/`, wird erst beim Klick geladen). Die Modelle liegen als GLB in `export/glb/`
+(`assembly`, `body`, `front_bezel`, `battery_door`, `vent_clip`, `assembly_exploded`) plus Vorschaubilder in `export/glb/posters/`;
+`pages.yml` kopiert beides nach `gehaeuse/3d/`.
+
+```bash
+venv/bin/pip install cascadio==0.0.17 trimesh numpy
+venv/bin/python step_to_glb.py      # STEP -> GLB (Toleranz 0,05 mm / 0,3 rad); läuft auch am Ende von enclosure.py, wenn cascadio installiert ist
+node cad_posters.mjs                # Poster-PNGs (npm i playwright; npx playwright install chromium)
+```
+
+Farben setzt `step_to_glb.py` je Teil (Tabelle `COLORS`; `board_dummy` = dunkelgrüne Platine/Display, sichtbar nur in der Baugruppe).
+Die Explosionsansicht entsteht dort durch Z-Versatz der Baugruppen-Knoten (`EXPLODE`).
+Hinweis: Die Vorlage-Pipeline nutzt puppeteer-core für die Poster; hier wird stattdessen Playwright verwendet (vorinstalliert).
+Nach Änderungen am Modell: `python enclosure.py`, dann ggf. `node cad_posters.mjs`, und die GLBs/Poster mit einchecken.
+
 ## Teile
 
 | Teil | Datei | Druckausrichtung |

@@ -1,0 +1,244 @@
+// 3D-Viewer fuer das Gehaeuse: Lightbox mit three.js (lokal unter vendor/three, Importmap in index.html).
+// three.js wird erst beim Klick auf "3D ansehen" per dynamischem import() geladen.
+
+const BASE = 'gehaeuse/3d/';
+const MODELS = [
+  { id: 'assembly', label: 'Baugruppe' },
+  { id: 'body', label: 'Gehäuse' },
+  { id: 'front_bezel', label: 'Frontrahmen' },
+  { id: 'battery_door', label: 'Akkudeckel' },
+  { id: 'vent_clip', label: 'Lüftungs-Clip' },
+  { id: 'assembly_exploded', label: 'Explosionsansicht' },
+];
+const HINT = 'Ziehen: drehen · Scrollen: zoomen · Rechtsklick: verschieben';
+
+let viewer = null; // { dialog, ... } einmal aufgebaut, bei jedem Oeffnen neu gestartet
+let threePromise = null;
+
+function loadThree() {
+  threePromise ||= Promise.all([
+    import('three'),
+    import('three/addons/controls/OrbitControls.js'),
+    import('three/addons/loaders/GLTFLoader.js'),
+    import('three/addons/environments/RoomEnvironment.js'),
+  ]).then(([THREE, oc, gl, re]) => ({
+    THREE, OrbitControls: oc.OrbitControls, GLTFLoader: gl.GLTFLoader, RoomEnvironment: re.RoomEnvironment,
+  }));
+  threePromise.catch(() => { threePromise = null; });
+  return threePromise;
+}
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
+
+function buildDom() {
+  const dialog = el('dialog', 'cad-dialog');
+  dialog.setAttribute('aria-label', '3D-Ansicht des Gehäuses');
+  const stage = el('div', 'cad-stage');
+  const ui = el('div', 'cad-ui');
+  const close = el('button', 'cad-close', '×');
+  close.type = 'button';
+  close.setAttribute('aria-label', 'Schließen');
+  const bar = el('div', 'cad-bar');
+  const tabs = el('div', 'cad-tabs');
+  tabs.setAttribute('role', 'tablist');
+  const hint = el('div', 'cad-hint', HINT);
+  const status = el('div', 'cad-status');
+  status.setAttribute('role', 'status');
+  bar.append(tabs, hint);
+  ui.append(close, status, bar);
+  dialog.append(stage, ui);
+  document.body.append(dialog);
+
+  const buttons = MODELS.map((m) => {
+    const b = el('button', 'cad-tab');
+    b.type = 'button';
+    b.dataset.model = m.id;
+    b.setAttribute('role', 'tab');
+    const img = el('img');
+    img.alt = '';
+    img.loading = 'lazy';
+    img.src = `${BASE}posters/${m.id}.png`;
+    img.addEventListener('error', () => img.remove());
+    b.append(img, el('span', null, m.label));
+    tabs.append(b);
+    return b;
+  });
+  return { dialog, stage, close, tabs, buttons, status };
+}
+
+function disposeObject(root) {
+  root.traverse((o) => {
+    if (o.geometry) o.geometry.dispose();
+    if (o.material) {
+      for (const m of Array.isArray(o.material) ? o.material : [o.material]) {
+        for (const v of Object.values(m)) if (v && v.isTexture) v.dispose();
+        m.dispose();
+      }
+    }
+  });
+}
+
+async function open(initial) {
+  if (!viewer) {
+    viewer = buildDom();
+    viewer.dialog.addEventListener('click', (e) => { if (e.target === viewer.dialog) viewer.dialog.close(); });
+    viewer.close.addEventListener('click', () => viewer.dialog.close());
+  }
+  const v = viewer;
+  const { dialog, stage, status, buttons } = v;
+  if (dialog.open) return;
+  dialog.showModal();
+  document.documentElement.classList.add('cad-open');
+  dialog.dataset.ready = '';
+  status.textContent = 'Lade 3D-Viewer …';
+  status.className = 'cad-status';
+
+  let lib;
+  try {
+    lib = await loadThree();
+  } catch (e) {
+    return fail('3D-Viewer konnte nicht geladen werden.');
+  }
+  if (!dialog.open) return;
+  const { THREE, OrbitControls, GLTFLoader, RoomEnvironment } = lib;
+
+  let renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
+  } catch (e) {
+    return fail('WebGL ist in diesem Browser nicht verfügbar – die 3D-Ansicht kann nicht angezeigt werden.');
+  }
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  stage.append(renderer.domElement);
+
+  const scene = new THREE.Scene();
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  scene.environment = envTex;
+  scene.environmentIntensity = 0.7;
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8f98, 0.35));
+  const sun = new THREE.DirectionalLight(0xffffff, 1.3);
+  scene.add(sun, sun.target);
+  const camera = new THREE.PerspectiveCamera(35, 1, 0.001, 10);
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.screenSpacePanning = true;
+  controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
+
+  const mq = window.matchMedia('(prefers-color-scheme: dark)');
+  const applyTheme = () => { scene.background = new THREE.Color(mq.matches ? 0x141920 : 0xe9ecf0); };
+  applyTheme();
+  mq.addEventListener('change', applyTheme);
+
+  const loader = new GLTFLoader();
+  let model = null, token = 0, raf = 0, disposed = false, current = null;
+
+  function resize() {
+    const w = Math.max(stage.clientWidth, 1), h = Math.max(stage.clientHeight, 1);
+    renderer.setSize(w, h, false);
+    renderer.domElement.style.width = w + 'px';
+    renderer.domElement.style.height = h + 'px';
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  const ro = new ResizeObserver(resize);
+  ro.observe(stage);
+  resize();
+
+  function fit(obj) {
+    const box = new THREE.Box3().setFromObject(obj);
+    const sphere = box.getBoundingSphere(new THREE.Sphere());
+    const vfov = THREE.MathUtils.degToRad(camera.fov);
+    const hfov = 2 * Math.atan(Math.tan(vfov / 2) * camera.aspect);
+    const dist = (sphere.radius / Math.sin(Math.min(vfov, hfov) / 2)) * 1.05;
+    // Vorderseite (+Z) zum Betrachter, leicht von rechts oben
+    const dir = new THREE.Vector3(0.45, 0.38, 1).normalize();
+    camera.position.copy(sphere.center).addScaledVector(dir, dist);
+    camera.near = dist / 100;
+    camera.far = dist * 20;
+    camera.updateProjectionMatrix();
+    controls.target.copy(sphere.center);
+    controls.minDistance = sphere.radius * 0.4;
+    controls.maxDistance = dist * 4;
+    controls.update();
+    sun.position.copy(sphere.center).add(new THREE.Vector3(1.2, 1.6, 2).multiplyScalar(sphere.radius * 3));
+    sun.target.position.copy(sphere.center);
+  }
+
+  async function show(id) {
+    const my = ++token;
+    current = id;
+    buttons.forEach((b) => b.setAttribute('aria-selected', String(b.dataset.model === id)));
+    dialog.dataset.ready = '';
+    status.className = 'cad-status';
+    status.textContent = 'Modell wird geladen …';
+    if (model) { scene.remove(model); disposeObject(model); model = null; }
+    try {
+      const gltf = await loader.loadAsync(`${BASE}${id}.glb`);
+      if (my !== token || disposed) { disposeObject(gltf.scene); return; }
+      model = gltf.scene;
+      scene.add(model);
+      fit(model);
+      status.textContent = '';
+      status.className = 'cad-status';
+      renderer.render(scene, camera);
+      dialog.dataset.ready = id;
+    } catch (e) {
+      if (my !== token || disposed) return;
+      status.textContent = 'Das Modell konnte nicht geladen werden.';
+      status.className = 'cad-status cad-error';
+    }
+  }
+
+  const onTab = (e) => {
+    const b = e.target.closest('.cad-tab');
+    if (b && b.dataset.model !== current) show(b.dataset.model);
+  };
+  v.tabs.addEventListener('click', onTab);
+
+  function loop() {
+    if (disposed) return;
+    raf = requestAnimationFrame(loop);
+    controls.update();
+    renderer.render(scene, camera);
+  }
+  loop();
+
+  function teardown() {
+    disposed = true;
+    cancelAnimationFrame(raf);
+    ro.disconnect();
+    mq.removeEventListener('change', applyTheme);
+    v.tabs.removeEventListener('click', onTab);
+    dialog.removeEventListener('close', teardown);
+    controls.dispose();
+    if (model) disposeObject(model);
+    envTex.dispose();
+    pmrem.dispose();
+    renderer.dispose();
+    renderer.forceContextLoss();
+    renderer.domElement.remove();
+    document.documentElement.classList.remove('cad-open');
+    dialog.dataset.ready = '';
+  }
+  dialog.addEventListener('close', teardown);
+
+  show(initial);
+
+  function fail(msg) {
+    status.textContent = msg;
+    status.className = 'cad-status cad-error';
+    dialog.addEventListener('close', () => document.documentElement.classList.remove('cad-open'), { once: true });
+  }
+}
+
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-cad-open]');
+  if (b) { e.preventDefault(); open(b.dataset.cadOpen || 'assembly'); }
+});

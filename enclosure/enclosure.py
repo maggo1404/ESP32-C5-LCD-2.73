@@ -637,6 +637,11 @@ def main():
     render_png([(asm_parts["body"], "gray70", (0, 0, 0))], os.path.join(OUT, "preview_body_front.png"), 40, -60, "Koerper vorne")
     with open(os.path.join(OUT, "check_report.txt"), "w") as f:
         f.write("\n".join(rep) + "\n")
+    try:   # optional: GLB fuer den Web-3D-Viewer (braucht cascadio, trimesh)
+        import step_to_glb
+        step_to_glb.main()
+    except ImportError:
+        print("cascadio/trimesh fehlt -> GLB uebersprungen (siehe step_to_glb.py)")
     return 0 if ok else 1
 
 if __name__ == "__main__":

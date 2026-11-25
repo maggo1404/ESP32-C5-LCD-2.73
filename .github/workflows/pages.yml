@@ -56,6 +56,11 @@ jobs:
           for f in enclosure/export/*.3mf enclosure/export/*.step enclosure/export/*.stl; do
             [ -e "$f" ] && cp "$f" _site/gehaeuse/ || true
           done
+          # 3D-Viewer: GLB-Modelle + Vorschaubilder (nicht in files.json)
+          if [ -d enclosure/export/glb ]; then
+            mkdir -p _site/gehaeuse/3d
+            cp -r enclosure/export/glb/. _site/gehaeuse/3d/
+          fi
           VERSION="$(git describe --tags --always --dirty 2>/dev/null || git rev-parse --short HEAD)"
           python3 - "$VERSION" <<'PY'
           import json, sys
