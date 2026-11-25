@@ -2,6 +2,7 @@
 #include "settings.h"
 
 #include "app_config.h"
+#include "battery.h"
 #include "esp_log.h"
 #include "nvs.h"
 
@@ -13,6 +14,7 @@ static volatile settings_t s_cfg = {
     .sd_log = true,
     .usb_out = false,
     .brightness = 80,
+    .battery_type = DEFAULT_BATTERY_TYPE,
 };
 
 static bool channel_valid(uint16_t ch)
@@ -42,6 +44,9 @@ void settings_load(void)
     if (nvs_get_u8(h, "bright", &v) == ESP_OK && v >= 10 && v <= 100) {
         s_cfg.brightness = v;
     }
+    if (nvs_get_u8(h, "battype", &v) == ESP_OK && v < BATTERY_TYPE_COUNT) {
+        s_cfg.battery_type = v;
+    }
     nvs_close(h);
 }
 
@@ -58,6 +63,7 @@ void settings_save(void)
     nvs_set_u8(h, "sd", c.sd_log);
     nvs_set_u8(h, "usb", c.usb_out);
     nvs_set_u8(h, "bright", c.brightness);
+    nvs_set_u8(h, "battype", c.battery_type);
     err = nvs_commit(h);
     if (err != ESP_OK) {
         ESP_LOGW(TAG, "nvs_commit: %s", esp_err_to_name(err));
@@ -72,6 +78,7 @@ settings_t settings_get(void)
     c.sd_log = s_cfg.sd_log;
     c.usb_out = s_cfg.usb_out;
     c.brightness = s_cfg.brightness;
+    c.battery_type = s_cfg.battery_type;
     return c;
 }
 
@@ -88,4 +95,10 @@ void settings_set_brightness(uint8_t p)
     if (p < 10) p = 10;
     if (p > 100) p = 100;
     s_cfg.brightness = p;
+}
+void settings_set_battery_type(uint8_t type)
+{
+    if (type < BATTERY_TYPE_COUNT) {
+        s_cfg.battery_type = type;
+    }
 }

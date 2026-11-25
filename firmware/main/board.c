@@ -120,7 +120,15 @@ float board_battery_volts(void)
         if (raw == 0 || raw > 4095) {
             cached = -1.0f;
         } else {
-            /* 12 bit ADC, 3.3 V reference, 1:3 divider (as in the Waveshare demo) */
+            /* Same conversion as Waveshare's bat_adc_read() (01_factory / 07_exio demos):
+             * raw * 3.3 / 4095 * 3  (12 bit, 3.3 V reference, R21 200K / R25 100K = 3:1).
+             * UNVERIFIED on hardware: the CH32V003's own ADC is 10 bit, so the expander
+             * firmware may scale internally. The reference is the 3V3 rail, which sags
+             * together with a LiFePO4 cell below ~3.4 V (buck regulator in dropout), so
+             * the value reads too high there (about +6 % at 3.1 V).
+             * Calibrate against a multimeter at ~3.0 / 3.3 / 4.0 V and adjust the factor
+             * below if needed. TODO: optional Vdd compensation once the dropout of U3
+             * has been measured. */
             cached = (float)raw * 3.3f / 4095.0f * 3.0f;
         }
     }

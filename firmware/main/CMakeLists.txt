@@ -2,6 +2,7 @@ idf_component_register(
     SRCS
         main.c
         board.c
+        battery.c
         lvgl_port.c
         rx_11p.c
         sd_log.c

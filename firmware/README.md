@@ -38,7 +38,7 @@ wird beim ersten Konfigurieren geladen (Internetzugang zu `components.espressif.
 nötig). Der Bootloader nutzt Log-Level WARN, damit er in die 0x6000 Bytes vor der Partitionstabelle passt. Hinweis: `LV_COLOR_16_SWAP=y` ist erforderlich, der ILI9488-Treiber
 erwartet byte-vertauschtes RGB565.
 
-Ergebnis (v5.5.6): App ca. 1,46 MB (`0x1766e0` Bytes) in der 6-MB-Partition, 76 % frei;
+Ergebnis (v5.5.6): App ca. 1,69 MB (`0x1af980` Bytes) in der 6-MB-Partition, 76 % frei;
 Bootloader 0x4c90 Bytes (20 % frei); interner RAM nach dem Linken rund 190 kB frei (der Decoder-Store
 (~93 kB `.bss`) liegt im PSRAM, siehe `main/linker.lf`; IDF verlagert dabei auch die Wi-Fi-`.bss`).
 
@@ -155,14 +155,14 @@ Ebenen: **Seitenleiste** (unten markiert) → *Liste* → *Detail*.
 * Detail Station/Warnung: PREV/NEXT blättern durch die Einträge, langes ENTER zurück.
 * Detail Ampel: PREV/NEXT scrollen die Spurliste, ENTER wechselt zwischen **Spuren**
   und **Karte** (in der Karte wechseln PREV/NEXT die Kreuzung), langes ENTER zurück.
-* Einstellungen: ENTER bei *Kanal*/*Helligkeit* startet das Ändern (PREV/NEXT ändern den Wert,
+* Einstellungen: ENTER bei *Kanal*/*Helligkeit*/*Akku* startet das Ändern (PREV/NEXT ändern den Wert,
   ENTER oder lang beendet), *SD-Log*/*USB-Ausgabe* schalten direkt um,
   *Zähler löschen* leert Stationen/Ampeln/Warnungen und setzt die Verlustzähler zurück. Alles wird in NVS gespeichert.
 
 ### Seiten
 
 * **Status**: Pakete gesamt und pro Sekunde, Zähler je Nachrichtentyp, letzter RSSI, Kanal,
-  SD-/USB-Status, Akkuspannung, Laufzeit, verworfene Frames, freier Heap.
+  SD-/USB-Status, Akku (Typ, Spannung, Prozent), Laufzeit, verworfene Frames, freier Heap.
 * **Stationen**: ID, Typ, RSSI, Alter, `Typen` (C = CAM, D = DENM, M = MAPEM, S = SPATEM,
   + = andere). Detail mit Position/Geschwindigkeit/Richtung (aus CAM), MAC.
 * **Ampeln**: Liste der Kreuzungen (MAP/SPAT vorhanden, Alter); Detail pro Zufahrt mit Spuren,
@@ -174,7 +174,40 @@ Ebenen: **Seitenleiste** (unten markiert) → *Liste* → *Detail*.
 * **Einstellungen**: siehe oben.
 
 Statuszeile oben: Kanal, Pakete/s, USB-Symbol, SD-Symbol (grün = schreibt, gelb = keine Karte,
-rot = Fehler), Akkuspannung.
+rot = Fehler), Akku in Prozent mit Symbol (gelb/rot nach Akkutyp).
+
+### Akkutyp (LiPo / LiFePO4)
+
+*Einstellungen > Akku* wählt den Typ (Standard LiPo, in NVS gespeichert; Standard per
+`DEFAULT_BATTERY_TYPE` in `main/app_config.h`). Der Typ bestimmt Prozentkurve, Warnschwellen und
+Abschaltung (`main/battery.c`):
+
+| | LiPo | LiFePO4 |
+|---|---|---|
+| Kurve (Ruhespannung, ungefähr) | 4,20 V=100 %, 4,00=80, 3,85=60, 3,75=40, 3,65=20, 3,50=5, 3,30=0 | 3,40 V=100 %, 3,32=80, 3,30=60, 3,27=40, 3,22=20, 3,10=5, 3,00=0 |
+| gelb unter | 3,65 V | 3,15 V |
+| rot unter | 3,50 V | 3,10 V |
+| Abschaltung (> 10 s darunter) | 3,35 V | 3,05 V |
+
+Die Kurven sind allgemeine Näherungen der Ruhespannung (unter Last liegt die Spannung niedriger,
+die LiFePO4-Kurve ist sehr flach) und nicht an dieser Hardware gemessen. Die Abschaltung schließt
+die pcap-Datei sauber (`sd_log_shutdown()`), zeigt eine Meldung und geht in Deep Sleep (Wiederanlauf
+per Reset/Spannung aus-ein). Ungültige Messwerte (`n/a`) lösen nie eine Abschaltung aus; einzelne
+Ausreißer auch nicht (Schwelle muss > 10 s unterschritten bleiben). USB-Betrieb und Ladezustand lassen
+sich auf diesem Board nicht zuverlässig auslesen und werden daher weder erkannt noch angezeigt.
+
+**Akku-ADC-Skalierung (unbestätigt):** `board_battery_volts()` rechnet wie Waveshares
+`bat_adc_read()` (Demos `01_factory`, `07_exio`): `raw * 3,3 / 4095 * 3` (R21/R25 = 3:1). Der
+CH32V003-ADC ist nativ 10 Bit, ob die Expander-Firmware auf 12 Bit skaliert, ist nicht belegt.
+Referenz ist die 3V3-Schiene, die bei LiFePO4 unter ca. 3,4 V mit dem Akku absinkt (Messwert dann zu
+hoch, ca. +6 % bei 3,1 V). Vor dem Einsatz mit Multimeter bei ca. 3,0 / 3,3 / 4,0 V vergleichen und
+den Faktor in `main/board.c` anpassen.
+
+### Host-Test (Akkukurve, Abschaltlogik)
+
+```sh
+make -C firmware/main/test_battery   # gcc -Wall -Wextra -Werror -fsanitize=address,undefined
+```
 
 ## Kanäle
 
@@ -205,6 +238,6 @@ und 5920 MHz; die Umschaltung erfolgt nach dem Bestätigen (ENTER) im Worker-Tas
 Gebaut und statisch geprüft wurde nur mit ESP-IDF v5.5.6; ein Lauf auf dem Board stand nicht zur
 Verfügung. Unbestätigt sind insbesondere: Empfang auf dem C5 (insb. die Frame-Länge:
 verwendet wird `sig_len - 4`, ersatzweise begrenzt durch `dump_len`, OpenTrafficMap nutzt `dump_len`),
-Farbwiedergabe/Byte-Reihenfolge des Displays, SPI-Takt 40 MHz, Akku-ADC-Skalierung (Faktor 3 laut
-Waveshare-Demo), IO-Expander-Pin 5 (USB/CAN-Auswahl, wird beim Start auf 0 = USB gesetzt), SD-Hotplug, USB-SLIP-Durchsatz
+Farbwiedergabe/Byte-Reihenfolge des Displays, SPI-Takt 40 MHz, Akku-ADC-Skalierung (Faktor 3 und 12 Bit laut
+Waveshare-Demo, 10-Bit-ADC des CH32V003; Kalibrierung siehe Akkutyp), Akkukurven und Abschaltung am Board, IO-Expander-Pin 5 (USB/CAN-Auswahl, wird beim Start auf 0 = USB gesetzt), SD-Hotplug, USB-SLIP-Durchsatz
 und der RAM-Bedarf zur Laufzeit.

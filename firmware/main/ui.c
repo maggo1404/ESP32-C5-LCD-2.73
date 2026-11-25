@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "battery.h"
 #include "board.h"
 #include "esp_attr.h"
 #include "buttons.h"
@@ -488,7 +489,7 @@ static void update_status(void)
     sd_log_status_t sd;
     sd_log_get_status(&sd);
     settings_t cfg = settings_get();
-    char age[16], up[16], sdtxt[64], usbtxt[64], bat[24];
+    char age[16], up[16], sdtxt[64], usbtxt[64], bat[40];
 
     if (S.last_rx_us) fmt_age(age, sizeof(age), s_now - S.last_rx_us); else strcpy(age, "--");
     fmt_uptime(up, sizeof(up));
@@ -510,7 +511,12 @@ static void update_status(void)
                  (unsigned)rs.usb_frames);
     }
     float v = board_battery_volts();
-    if (v > 0) snprintf(bat, sizeof(bat), "%.2f V", (double)v); else strcpy(bat, "n/a");
+    if (battery_present(v)) {
+        snprintf(bat, sizeof(bat), "%s %.2f V %d %%", battery_type_name(cfg.battery_type), (double)v,
+                 board_battery_percent(cfg.battery_type, v));
+    } else {
+        snprintf(bat, sizeof(bat), "%s: kein Akku", battery_type_name(cfg.battery_type));
+    }
 
     uint32_t known = S.per_msg[ITS_MSG_CAM] + S.per_msg[ITS_MSG_DENM] + S.per_msg[ITS_MSG_MAPEM] +
                      S.per_msg[ITS_MSG_SPATEM];
@@ -717,8 +723,11 @@ static void update_warnings(void)
     }
 }
 
-#define SET_ROWS 5
-static int s_edit_ch; /* pending channel while editing */
+#define SET_ROWS 6
+#define SET_ROW_BATTERY 4
+#define SET_ROW_CLEAR 5
+static int s_edit_ch;  /* pending channel while editing */
+static int s_edit_bat; /* pending battery type while editing */
 
 static void update_settings(void)
 {
@@ -729,9 +738,12 @@ static void update_settings(void)
     snprintf(v[1], sizeof(v[1]), "%s", c.sd_log ? "an" : "aus");
     snprintf(v[2], sizeof(v[2]), "%s", c.usb_out ? "an" : "aus");
     snprintf(v[3], sizeof(v[3]), "%u %%", (unsigned)c.brightness);
-    snprintf(v[4], sizeof(v[4]), "OK drücken");
+    snprintf(v[SET_ROW_BATTERY], sizeof(v[SET_ROW_BATTERY]), "%s",
+             battery_type_name((s_nav == NAV_EDIT && s_sel[PAGE_SETTINGS] == SET_ROW_BATTERY) ? s_edit_bat
+                                                                                              : c.battery_type));
+    snprintf(v[SET_ROW_CLEAR], sizeof(v[SET_ROW_CLEAR]), "OK drücken");
     static const char *const names[SET_ROWS] = {"Kanal", "SD-Log (pcap)", "USB-Ausgabe (SLIP)", "Helligkeit",
-                                                "Zähler löschen"};
+                                                "Akku", "Zähler löschen"};
     for (int r = 0; r < T_ROWS; r++) {
         if (r >= SET_ROWS) {
             table_row(&s_t_set, r, false, false);
@@ -743,7 +755,7 @@ static void update_settings(void)
         if (edit) snprintf(val, sizeof(val), "< %.31s >", v[r]); else strlcpy(val, v[r], sizeof(val));
         set_text(s_t_set.cell[r][0], names[r]);
         set_text(s_t_set.cell[r][1], val);
-        set_color(s_t_set.cell[r][1], edit ? C_WARN : (r == 4 ? C_DIM : C_ACCENT));
+        set_color(s_t_set.cell[r][1], edit ? C_WARN : (r == SET_ROW_CLEAR ? C_DIM : C_ACCENT));
         table_row(&s_t_set, r, sel, true);
     }
 }
@@ -767,11 +779,14 @@ static void update_topbar(void)
     set_color(s_bar_sd, sc);
 
     float v = board_battery_volts();
-    if (v > 0) {
-        const char *sym = v > 4.0f ? LV_SYMBOL_BATTERY_FULL : v > 3.8f ? LV_SYMBOL_BATTERY_3
-                        : v > 3.65f ? LV_SYMBOL_BATTERY_2 : v > 3.5f ? LV_SYMBOL_BATTERY_1 : LV_SYMBOL_BATTERY_EMPTY;
-        snprintf(b, sizeof(b), "%.2fV %s", (double)v, sym);
-        set_color(s_bar_bat, v < 3.5f ? C_ERR : (v < 3.65f ? C_WARN : C_TEXT));
+    if (battery_present(v)) {
+        int pct = board_battery_percent(cfg.battery_type, v);
+        const char *sym = pct >= 80 ? LV_SYMBOL_BATTERY_FULL : pct >= 55 ? LV_SYMBOL_BATTERY_3
+                        : pct >= 30 ? LV_SYMBOL_BATTERY_2 : pct >= 10 ? LV_SYMBOL_BATTERY_1 : LV_SYMBOL_BATTERY_EMPTY;
+        snprintf(b, sizeof(b), "%d%% %s", pct, sym);
+        set_color(s_bar_bat, v < battery_crit_volts(cfg.battery_type)
+                                 ? C_ERR
+                                 : (v < battery_warn_volts(cfg.battery_type) ? C_WARN : C_TEXT));
     } else {
         snprintf(b, sizeof(b), "-- V");
         set_color(s_bar_bat, C_DIM);
@@ -805,6 +820,35 @@ static void update_chrome(void)
     }
 }
 
+/* Full-screen message (low battery shutdown), requested from any task. */
+static char s_msg[96];
+static volatile bool s_msg_pending;
+static lv_obj_t *s_msg_box;
+
+void ui_show_message(const char *text)
+{
+    strlcpy(s_msg, text, sizeof(s_msg));
+    s_msg_pending = true;
+}
+
+static void show_pending_message(void)
+{
+    if (!s_msg_pending) {
+        return;
+    }
+    s_msg_pending = false;
+    lv_obj_t *top = lv_layer_top();
+    if (!s_msg_box) {
+        s_msg_box = plain(top, 0, 0, UI_W, LCD_H);
+        lv_obj_set_style_bg_color(s_msg_box, C_BG, 0);
+        lv_obj_set_style_bg_opa(s_msg_box, LV_OPA_COVER, 0);
+        lv_obj_t *l = mk_label(s_msg_box, 10, 100, UI_W - 20, ui_f20, C_ERR, LV_TEXT_ALIGN_CENTER);
+        lv_label_set_long_mode(l, LV_LABEL_LONG_WRAP);
+    }
+    set_text(lv_obj_get_child(s_msg_box, 0), s_msg);
+    lv_obj_move_foreground(s_msg_box);
+}
+
 static void refresh(void)
 {
     take_snapshot();
@@ -817,6 +861,7 @@ static void refresh(void)
     default: update_settings(); break;
     }
     update_chrome(); /* after the page: list sizes feed the title */
+    show_pending_message();
 }
 
 /* ------------------------------------------------------------------ */
@@ -855,6 +900,9 @@ static void leave_edit(void)
         settings_set_channel((uint16_t)s_edit_ch);
         rx_set_channel((uint16_t)s_edit_ch);
     }
+    if (s_sel[PAGE_SETTINGS] == SET_ROW_BATTERY) {
+        settings_set_battery_type((uint8_t)s_edit_bat);
+    }
     settings_save();
     s_nav = NAV_LIST;
 }
@@ -869,6 +917,9 @@ static void settings_adjust(int d)
         if (ch < RX_CHANNEL_MIN_MHZ) ch = RX_CHANNEL_MAX_MHZ;
         if (ch > RX_CHANNEL_MAX_MHZ) ch = RX_CHANNEL_MIN_MHZ;
         s_edit_ch = ch;
+    } else if (r == SET_ROW_BATTERY) {
+        /* two values: any direction toggles; applied when the edit is confirmed */
+        s_edit_bat = (s_edit_bat + BATTERY_TYPE_COUNT + d) % BATTERY_TYPE_COUNT;
     } else if (r == 3) {
         int b = (int)c.brightness + d * 10;
         if (b < 10) b = 10;
@@ -889,6 +940,10 @@ static void settings_activate(void)
     case 3:
         s_nav = NAV_EDIT;
         break;
+    case SET_ROW_BATTERY:
+        s_edit_bat = c.battery_type;
+        s_nav = NAV_EDIT;
+        break;
     case 1:
         settings_set_sd_log(!c.sd_log);
         settings_save();
@@ -897,7 +952,7 @@ static void settings_activate(void)
         settings_set_usb_out(!c.usb_out);
         settings_save();
         break;
-    case 4:
+    case SET_ROW_CLEAR:
         its_store_clear();
         rx_reset_stats();
         sd_log_reset_dropped();

@@ -22,6 +22,10 @@
 
 #define SD_MOUNT_POINT "/sdcard"
 
+/* ---- Battery ---- */
+/* Default chemistry before the user picks one in Einstellungen (0 = LiPo, 1 = LiFePO4). */
+#define DEFAULT_BATTERY_TYPE 0
+
 /* ---- Receiver ---- */
 #define RX_CHANNEL_MIN_MHZ   5860
 #define RX_CHANNEL_MAX_MHZ   5920

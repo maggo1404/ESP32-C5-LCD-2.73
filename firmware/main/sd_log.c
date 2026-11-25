@@ -31,6 +31,7 @@ static const char *TAG = "sd_log";
 
 static MessageBufferHandle_t s_mb;
 static volatile bool s_active;
+static volatile bool s_halt; /* sd_log_shutdown(): behave like "disabled in settings", for good */
 static sdmmc_card_t *s_card;
 static FILE *s_file;
 static portMUX_TYPE s_lock = portMUX_INITIALIZER_UNLOCKED;
@@ -198,7 +199,7 @@ static void sd_task(void *arg)
     char name[24] = "";
 
     for (;;) {
-        bool want = settings_get().sd_log;
+        bool want = settings_get().sd_log && !s_halt;
 
         if (!s_active) {
             /* OFF or NO_CARD */
@@ -280,6 +281,15 @@ static void sd_task(void *arg)
             status_update(SD_LOG_NO_CARD, true, NULL, 0, 0);
         }
     }
+}
+
+void sd_log_shutdown(void)
+{
+    s_halt = true;
+    for (int i = 0; i < 30 && (s_active || s_card); i++) {
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
+    vTaskDelay(pdMS_TO_TICKS(100));
 }
 
 esp_err_t sd_log_start(void)

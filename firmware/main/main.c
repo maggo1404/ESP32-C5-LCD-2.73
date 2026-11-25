@@ -9,6 +9,7 @@
 #include "esp_heap_caps.h"
 #include "esp_log.h"
 #include "esp_rom_uart.h"
+#include "esp_sleep.h"
 #include "esp_system.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -17,6 +18,7 @@
 #include "its.h"
 #include "nvs_flash.h"
 
+#include "battery.h"
 #include "board.h"
 #include "buttons.h"
 #include "lvgl_port.h"
@@ -121,6 +123,37 @@ static void diag_heartbeat(void)
     }
 }
 
+/* Low-voltage protection: a cell that is run flat browns the SoC out in the
+ * middle of an SD write. When the voltage stays below the per-chemistry
+ * threshold for BATTERY_SHUTDOWN_HOLD_MS, close the pcap cleanly, show a
+ * message and go to deep sleep (no wake source: power cycle / reset to resume).
+ * Invalid readings (-1, expander missing) never trigger it.
+ * Limitation: USB power cannot be detected on this board (no readable VBUS
+ * sense), so the guard also acts when the unit runs from USB with a flat cell
+ * attached. */
+static void battery_guard_task(void *arg)
+{
+    (void)arg;
+    battery_guard_t g;
+    battery_guard_init(&g);
+    for (;;) {
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        int type = settings_get().battery_type;
+        float v = board_battery_volts(); /* cached, refreshed every 3 s */
+        if (battery_guard_update(&g, type, v, esp_timer_get_time() / 1000)) {
+            break;
+        }
+    }
+    int type = settings_get().battery_type;
+    ESP_LOGW(TAG, "Akku leer (%s %.2f V < %.2f V), schalte ab", battery_type_name(type), (double)board_battery_volts(),
+             (double)battery_shutdown_volts(type));
+    sd_log_shutdown();
+    ui_show_message("Akku leer\nSpeicherkarte gesichert.\nGerät schaltet ab.\nBitte laden / Akku wechseln.");
+    vTaskDelay(pdMS_TO_TICKS(3000));
+    board_set_backlight(0);
+    esp_deep_sleep_start();
+}
+
 void app_main(void)
 {
     esp_log_set_vprintf(log_vprintf);
@@ -174,5 +207,6 @@ void app_main(void)
         ESP_LOGE(TAG, "rx_start fehlgeschlagen: %s", esp_err_to_name(err));
     }
     BOOT_STEP("rx_start: %s", esp_err_to_name(err));
+    xTaskCreate(battery_guard_task, "batt_guard", 3072, NULL, 2, NULL);
     diag_heartbeat();
 }

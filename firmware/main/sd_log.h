@@ -29,5 +29,10 @@ bool sd_log_active(void);
 /* Queue one frame as a pcap record. Never blocks. `ts_us` is time since boot. */
 void sd_log_submit(int64_t ts_us, const uint8_t *frame, size_t len);
 
+/* Flushes and closes the pcap file, unmounts the card and keeps logging off
+ * (until reboot). Blocks up to ~3 s until the SD task has finished. Call before
+ * deep sleep / power loss. */
+void sd_log_shutdown(void);
+
 void sd_log_get_status(sd_log_status_t *out);
 void sd_log_reset_dropped(void);
